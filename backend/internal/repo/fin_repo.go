@@ -539,17 +539,19 @@ func insertAssetFromFields(ctx context.Context, tx *sql.Tx, tagID string, fields
 	if status == "" {
 		status = string(domain.AssetInUse)
 	}
-	res, err := tx.ExecContext(ctx, `INSERT INTO assets
+	var assetID int64
+	err = tx.QueryRowContext(ctx, `INSERT INTO assets
 		(tag_id, name, category, model, sn, buy_date, price, dept_id, keeper, location, status, unit, warranty_end, remark, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		RETURNING asset_id`,
 		tagID, name, nullIfEmpty(fields["category"]), nullIfEmpty(fields["model"]), nullIfEmpty(fields["sn"]),
 		dateArg(buyDate), price, nullIfEmpty(fields["dept_id"]), nullIfEmpty(fields["keeper"]),
 		nullIfEmpty(fields["location"]), domain.AssetStatus(status), nullIfEmpty(fields["unit"]),
-		dateArg(warrantyEnd), nullIfEmpty(fields["remark"]), nowText(), nowText())
+		dateArg(warrantyEnd), nullIfEmpty(fields["remark"]), nowText(), nowText()).Scan(&assetID)
 	if err != nil {
 		return 0, err
 	}
-	return res.LastInsertId()
+	return assetID, nil
 }
 
 // updateAssetFields 按白名单动态回写变化字段（confirm 写 new / rollback 写 old）。

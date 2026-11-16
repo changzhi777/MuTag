@@ -28,17 +28,20 @@ func (r *AssetRepo) GetByTagID(ctx context.Context, tagID string) (*domain.Asset
 // Create 新建资产，返回 asset_id。
 func (r *AssetRepo) Create(ctx context.Context, a *domain.Asset) (int64, error) {
 	now := nowText()
-	res, err := r.db.ExecContext(ctx,
+	// RETURNING 双方言通用（SQLite 3.35+ / PG）——PG 无 LastInsertId
+	var id int64
+	err := r.db.QueryRowContext(ctx,
 		`INSERT INTO assets (tag_id, name, category, model, sn, buy_date, price,
 			dept_id, keeper, location, status, unit, warranty_end, remark, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		 RETURNING asset_id`,
 		a.TagID, a.Name, a.Category, a.Model, a.Sn, dateToText(a.BuyDate), a.Price,
 		a.DeptID, a.Keeper, a.Location, a.Status, a.Unit, dateToText(a.WarrantyEnd), a.Remark,
-		now, now)
+		now, now).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
-	return res.LastInsertId()
+	return id, nil
 }
 
 // AssetFilter 资产列表筛选条件（财务导出与台账列表共用）。
