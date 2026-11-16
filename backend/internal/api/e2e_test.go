@@ -579,3 +579,14 @@ func TestE2EScanStats(t *testing.T) {
 		t.Fatalf("扫码计数不符: %+v", byTag)
 	}
 }
+
+// 活码对外域名下发：服务端 BASE_URL 单一事实源（码内容不随后台入口域名漂移）
+func TestE2EAppConfig(t *testing.T) {
+	deps, _ := newTestDeps(t)
+	deps.BaseURL = "https://mutag.qingmulife.com"
+	gr := &ginRouter{r: NewRouter(deps), deps: deps}
+	w := gr.do(t, http.MethodGet, "/api/admin/config", "")
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"base_url":"https://mutag.qingmulife.com"`) {
+		t.Fatalf("code=%d body=%s", w.Code, w.Body.String())
+	}
+}

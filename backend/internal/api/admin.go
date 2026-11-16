@@ -369,3 +369,9 @@ func (d Deps) scanStats(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"items": stats})
 }
+
+// appConfig GET /api/admin/config —— 活码对外域名等前端配置（单一事实源：服务端 BASE_URL）。
+// 码版面打印/批量生成的活码内容用它构造，避免随后台入口域名漂移。
+func (d Deps) appConfig(c *gin.Context) {
+	c.JSON(200, gin.H{"base_url": d.BaseURL})
+}

@@ -111,12 +111,19 @@ export default function PrintPage() {
   const [fields, setFields] = useState<string[]>(loadCfg().fields);
   const [style, setStyle] = useState<QrStyle>(loadStyle);
   const [ziping, setZiping] = useState(false);
+  const [liveBase, setLiveBase] = useState(window.location.origin); // 服务端 BASE_URL 下发（fallback origin）
   const gridRef = useRef<HTMLDivElement>(null);
 
   const tpl = TEMPLATES.find((t) => t.key === tplKey) || TEMPLATES[1];
 
   useEffect(() => {
     document.title = "码版面打印 · MuTag 管理后台";
+  }, []);
+  useEffect(() => {
+    // 活码对外域名从服务端取（BASE_URL 单一事实源，不随后台入口域名漂移）
+    api<{ base_url: string }>("/config")
+      .then((r) => { if (r.base_url) setLiveBase(r.base_url.replace(/\/$/, "")); })
+      .catch(() => {});
   }, []);
   useEffect(() => localStorage.setItem("mutag_qr_style", JSON.stringify(style)), [style]);
   useEffect(() => localStorage.setItem("mutag_print_cfg", JSON.stringify({ tpl: tplKey, fields })), [tplKey, fields]);
@@ -157,7 +164,7 @@ export default function PrintPage() {
       holder.style.cssText = "position:fixed;left:-9999px;top:-9999px;";
       document.body.appendChild(holder);
       const qr = new QRCodeStyling({
-        ...styleToOptions(style, `${window.location.origin}/t/${asset.tag_id}`, 800),
+        ...styleToOptions(style, `${liveBase}/t/${asset.tag_id}`, 800),
         width: 800,
         height: 800,
         type: fmt === "png" ? ("canvas" as const) : ("svg" as const)
@@ -183,7 +190,7 @@ export default function PrintPage() {
       if (!box) return;
       box.innerHTML = "";
       const qr = new QRCodeStyling({
-        ...styleToOptions(style, `${window.location.origin}/t/${asset.tag_id}`, px),
+        ...styleToOptions(style, `${liveBase}/t/${asset.tag_id}`, px),
         width: px,
         height: px,
         type: "svg" as const
@@ -219,7 +226,7 @@ export default function PrintPage() {
       const zip = new JSZip();
       for (const a of chosen) {
         const qr = new QRCodeStyling({
-          ...styleToOptions(style, `${window.location.origin}/t/${a.tag_id}`, 600),
+          ...styleToOptions(style, `${liveBase}/t/${a.tag_id}`, 600),
           width: 600,
           height: 600,
           type: "canvas" as const

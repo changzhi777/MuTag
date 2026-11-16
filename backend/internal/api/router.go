@@ -23,6 +23,7 @@ type Deps struct {
 	Limiter       *cache.Limiter // 扫码限流（nil = 关闭；纪律 4）
 	H5            *h5.Renderer
 	AdminPassword string // 管理后台密码（空 = 免鉴权）
+	BaseURL       string // 活码对外域名（下发前端构造码内容）
 	WechatAppID   string // 小程序 AppID（空 = dev 模式登录）
 	WechatSecret  string // 小程序 AppSecret
 	TokenSecret   string // 小程序会话 token 签名密钥
@@ -84,6 +85,7 @@ func NewRouter(d Deps) *gin.Engine {
 		authed.GET("/assets", d.listAssets)
 		authed.POST("/assets", d.createAsset)
 		authed.PUT("/assets/:tagID", d.updateAsset)
+		authed.GET("/config", d.appConfig)
 		authed.GET("/tags", d.listTags)
 		authed.GET("/tags/scan-stats", d.scanStats)
 		authed.POST("/tags/:tagID/void", d.voidTag)

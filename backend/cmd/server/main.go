@@ -60,6 +60,7 @@ func main() {
 		Limiter:       cache.NewLimiter(cfg.RateBurst, cfg.RatePerSec),
 		H5:            renderer,
 		AdminPassword: cfg.AdminPassword,
+		BaseURL:       cfg.BaseURL,
 		WechatAppID:   cfg.WechatAppID,
 		WechatSecret:  cfg.WechatSecret,
 		TokenSecret:   cfg.TokenSecret,
