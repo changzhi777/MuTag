@@ -33,7 +33,7 @@
       <view class="sec-title">资产履历</view>
       <view wx:if="{{events.length === 0}}" class="tl-empty">暂无履历记录</view>
       <view class="tl" wx:else>
-        <view class="tl__item {{item.cls}}" wx:for="{{events}}" wx:key="index">
+        <view class="tl__item {{item.cls}}" wx:for="{{events}}" wx:key="id">
           <view class="tl__dot"></view>
           <view class="tl__body">
             <view class="tl__line">

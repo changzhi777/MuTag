@@ -1,22 +1,13 @@
 .wrap {
-  min-height: 100vh;
   padding: 32rpx;
-  box-sizing: border-box;
-  background: #F5F7FA;
-}
-
-.state {
-  text-align: center;
-  padding: 160rpx 0;
-  font-size: 28rpx;
-  color: #6B7280;
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
 }
+
+.item + .item { margin-top: 16rpx; }
 
 .item {
   background: #FFFFFF;

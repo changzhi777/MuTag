@@ -1,9 +1,6 @@
 /* pages/actions —— token 与全局同源 */
 .wrap {
-  min-height: 100vh;
   padding: 32rpx;
-  box-sizing: border-box;
-  background: #F5F7FA;
 }
 
 .tag-code {
@@ -21,12 +18,13 @@
 .acts {
   display: flex;
   flex-wrap: wrap;
-  gap: 16rpx;
-  margin-bottom: 32rpx;
+  margin: -8rpx;
+  margin-bottom: 24rpx;
 }
 
 .act {
-  width: calc(50% - 8rpx);
+  width: calc(50% - 16rpx);
+  margin: 8rpx;
   background: #FFFFFF;
   border: 2rpx solid #E5E7EB;
   border-radius: 16rpx;
@@ -76,7 +74,6 @@
 }
 
 .submit::after { border: none; }
-.pressed { opacity: 0.85; }
 
 .done {
   text-align: center;

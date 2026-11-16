@@ -1,11 +1,6 @@
 // pages/history/history —— 扫码历史：本地缓存最近 100 条，点击直达详情
 const auth = require("../../utils/auth");
-
-function fmtTime(ts) {
-  const d = new Date(ts);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getMonth() + 1}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
+const fmt = require("../../utils/format");
 
 Page({
   data: {
@@ -15,7 +10,7 @@ Page({
   onShow() {
     const items = auth.getHistory().map((x) => ({
       tag: x.tag,
-      timeText: fmtTime(x.time)
+      timeText: fmt.formatShortTime(x.time)
     }));
     this.setData({ items });
   },

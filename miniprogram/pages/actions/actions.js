@@ -36,6 +36,7 @@ Page({
   },
 
   onSubmit() {
+    if (this.data.submitting) return; // 并发守卫：防连点写重复履历
     const { tagID, current, location, note } = this.data;
     if (!tagID) {
       message("缺码号");
@@ -63,7 +64,12 @@ Page({
   },
 
   backToDetail() {
-    wx.navigateBack();
+    if (getCurrentPages().length > 1) {
+      wx.navigateBack();
+    } else {
+      // 无页面栈（直接进入本页）时兜底跳转详情
+      wx.redirectTo({ url: `/pages/detail/detail?tag=${this.data.tagID}` });
+    }
   }
 });
 

@@ -10,8 +10,12 @@
     "navigationBarBackgroundColor": "#1F2937",
     "navigationBarTextStyle": "white",
     "navigationBarTitleText": "MuTag 资产活码",
-    "backgroundColor": "#F5F6F8"
+    "backgroundColor": "#F5F7FA"
   },
   "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "networkTimeout": {
+    "request": 10000
+  },
   "sitemapLocation": "sitemap.json"
 }

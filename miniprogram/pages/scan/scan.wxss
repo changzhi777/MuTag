@@ -1,9 +1,6 @@
 /* pages/scan —— 设计 token 与 H5 同源（青沐青 + 冷灰阶），rpx 换算 */
 .wrap {
-  min-height: 100vh;
   padding: 48rpx 32rpx calc(48rpx + env(safe-area-inset-bottom));
-  box-sizing: border-box;
-  background: #F5F7FA;
 }
 
 .hero {
@@ -68,8 +65,6 @@
 
 .scan-btn::after { border: none; }
 
-.pressed { opacity: 0.85; }
-
 .manual {
   margin-top: 48rpx;
   background: #FFFFFF;
@@ -87,12 +82,12 @@
 
 .manual__row {
   display: flex;
-  gap: 16rpx;
 }
 
 .manual__input {
   flex: 1;
   height: 80rpx;
+  margin-right: 16rpx;
   padding: 0 24rpx;
   border: 2rpx solid #D0D5DD;
   border-radius: 16rpx;
@@ -115,7 +110,6 @@
 }
 
 .manual__go::after { border: none; }
-.manual__go--disabled { opacity: 0.5; }
 
 .manual__error {
   margin-top: 20rpx;
@@ -125,7 +119,6 @@
 
 .entries {
   display: flex;
-  gap: 16rpx;
   margin-top: 48rpx;
 }
 
@@ -140,3 +133,5 @@
   color: #0F766E;
   font-weight: 600;
 }
+
+.entry + .entry { margin-left: 16rpx; }

@@ -4,3 +4,23 @@ page {
   font-size: 28rpx;
   color: #1F2937;
 }
+
+/* 页面容器基类：各页仅需覆盖自身 padding */
+.wrap {
+  min-height: 100vh;
+  box-sizing: border-box;
+  background: #F5F7FA;
+}
+
+/* 统一按压反馈 */
+.pressed {
+  opacity: 0.85;
+}
+
+/* 通用状态占位（加载中 / 空态 / 错误） */
+.state {
+  text-align: center;
+  padding: 160rpx 0;
+  font-size: 28rpx;
+  color: #6B7280;
+}

@@ -3,7 +3,7 @@
   <view wx:elif="{{error}}" class="state">{{error}}</view>
   <view wx:elif="{{events.length === 0}}" class="state">暂无上报记录，扫码后即可发起领用/报修等操作</view>
   <view wx:else class="list">
-    <view class="item" wx:for="{{events}}" wx:key="index">
+    <view class="item" wx:for="{{events}}" wx:key="id">
       <view class="item__head">
         <view class="item__type">{{item.typeText}}</view>
         <view class="item__time">{{item.time}}</view>
