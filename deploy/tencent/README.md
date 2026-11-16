@@ -60,4 +60,9 @@ systemctl restart mutag
 5. **防火墙**：轻量控制台预设规则已含 80/443；自定义 18000 需手动加（本仓部署前已加）
 6. **DNS**：DNSPod qingmulife.com 加 A 记录 `mutag → 43.129.201.118`（TTL 600）
 7. **Supabase**：region ap-southeast-2（Sydney）；连接串必须 `sslmode=require`；
-   transaction pooler 下强制 simple protocol（见 internal/db，免疫 42P05）
+   ⚠️ **应用连接务必走直连（db.<ref>.supabase.co:5432），勿用 transaction pooler（6543）**：
+   池化连接 search_path 为空 → `ensure schema_migrations: no schema has been selected (SQLSTATE 3F000)`
+   启动 crash 循环（2026-11-17 实录，counter 35+）；直连用户名 `postgres`（无 .ref 后缀）；
+   备份 pg_dump 亦走直连（且 pg_dump 版本必须 ≥ 服务器版本）；simple protocol 仍保留（免疫其余 pooler 场景）
+8. **登录失效**：ADMIN_PASSWORD 生成链路（base64|tr 管道）曾引入不可见字符——重设为可读强密码；
+   排障三板斧：`cat mutag.env` → `cat /proc/<MainPID>/environ`（进程真实值）→ 本机 curl login
