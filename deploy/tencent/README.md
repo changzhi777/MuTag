@@ -18,6 +18,9 @@
 /opt/mutag/
 ├── mutag          # 二进制（go build ./cmd/server，31M 含 embed admin SPA）
 ├── mutag.env      # 环境变量（600 权限）：LISTEN_ADDR/BASE_URL/DATABASE_URL/ADMIN_PASSWORD
+│                  #   + WECHAT_APPID/WECHAT_SECRET（沐禾小程序 wx8c37d7ac5b7d0a83，真实 openid 登录）
+├── backups/       # 每日 pg_dump（保留 14 份）
+├── backup.sh      # 备份脚本（cron 03:00）
 └── src/           # 仓库克隆（git pull 更新源码后重编译）
 /etc/systemd/system/mutag.service
 /etc/nginx/sites-available/mutag.conf  （sites-enabled 软链）
