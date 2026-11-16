@@ -12,7 +12,8 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib" // 注册 "pgx" driver（PG 上线形态）
+	// PG 上线形态：解除下行注释（需先 go get github.com/jackc/pgx/v5，注册 "pgx" driver）
+	// _ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/gin-gonic/gin"
 
