@@ -15,7 +15,10 @@ import (
 	"sort"
 	"strings"
 
-	_ "modernc.org/sqlite" // 注册 "sqlite" database/sql driver（PG driver 由 main 注册）
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
+
+	_ "modernc.org/sqlite" // 注册 "sqlite" database/sql driver
 )
 
 //go:embed migrations/*.sql
@@ -52,21 +55,15 @@ func OpenSQLite(path string) (*sql.DB, error) {
 	return database, nil
 }
 
-// OpenPostgres 打开 PG 连接（"pgx" driver，由 main blank-import pgx/stdlib 注册）。
-// pgx 默认 prepare 模式仅支持 $n 占位符；repo 层统一 ? 风格，故强制简单协议
-// （文本替换，双方言同一 SQL）——MuTag 量级下协议开销可忽略。
+// OpenPostgres 打开 PG 连接（pgx + rebind 驱动包装）。
+// pgx 全链路（含 simple protocol）只认 $n 占位符；repo 层统一 ? 风格，
+// 故经 rebind_driver 包装层自动转换（? → $1..$n），双方言同一份 SQL。
 func OpenPostgres(dsn string) (*sql.DB, error) {
-	if !strings.Contains(dsn, "default_query_exec_mode") {
-		sep := "?"
-		if strings.Contains(dsn, "?") {
-			sep = "&"
-		}
-		dsn += sep + "default_query_exec_mode=simple_protocol"
-	}
-	database, err := sql.Open("pgx", dsn)
+	cfg, err := pgx.ParseConfig(dsn)
 	if err != nil {
-		return nil, fmt.Errorf("open postgres: %w", err)
+		return nil, fmt.Errorf("parse pg dsn: %w", err)
 	}
+	database := OpenWithRebind(stdlib.GetConnector(*cfg))
 	database.SetMaxOpenConns(10)
 
 	if err := database.Ping(); err != nil {

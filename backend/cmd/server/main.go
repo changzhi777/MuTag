@@ -12,9 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	// PG 上线形态：blank-import 注册 "pgx" driver（SQLite 形态不触发连接）
-	_ "github.com/jackc/pgx/v5/stdlib"
-
 	"github.com/gin-gonic/gin"
 
 	"mutag/backend/internal/api"

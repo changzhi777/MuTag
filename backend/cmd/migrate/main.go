@@ -1,16 +1,14 @@
 // MuTag 独立迁移执行器：部署期在应用启动前显式跑迁移（幂等）。
 // 用法：
-//   SQLite（默认）：DATABASE_URL 为空 → SQLITE_PATH
-//   PG 上线：       DATABASE_URL=postgres://... go run ./cmd/migrate
+//
+//	SQLite（默认）：DATABASE_URL 为空 → SQLITE_PATH
+//	PG 上线：       DATABASE_URL=postgres://... go run ./cmd/migrate
 package main
 
 import (
 	"context"
 	"database/sql"
 	"log"
-
-	// PG 形态：blank-import 注册 "pgx" driver
-	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"mutag/backend/internal/config"
 	"mutag/backend/internal/db"
