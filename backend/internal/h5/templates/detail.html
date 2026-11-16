@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#F5F7FA">
+<title>资产详情 · {{.Asset.Name}}</title>
+<style>{{template "style"}}</style>
+</head>
+<body>
+<div class="page">
+  <header class="card">
+    <div class="page-head">
+      <h1>{{.Asset.Name}}</h1>
+      <span class="badge {{statusClass .Asset.Status}}">{{statusLabel .Asset.Status}}</span>
+    </div>
+    <div class="tag-code" aria-label="资产码号">{{.Asset.TagID}}</div>
+  </header>
+
+  <section class="card">
+    <h2 class="sec-title">基本信息</h2>
+    <dl class="kv-list">
+      {{if .Asset.BuyDate}}<div class="kv"><dt>采购日期</dt><dd>{{fmtDateT .Asset.BuyDate}}</dd></div>{{end}}
+      {{if nz .Asset.Unit}}<div class="kv"><dt>单位</dt><dd>{{.Asset.Unit}}</dd></div>{{end}}
+      {{if nz .Asset.Keeper}}<div class="kv"><dt>保管人</dt><dd>{{.Asset.Keeper}}</dd></div>{{end}}
+      {{if nz .Asset.Model}}<div class="kv"><dt>型号</dt><dd>{{.Asset.Model}}</dd></div>{{end}}
+      {{if nz .Asset.Sn}}<div class="kv"><dt>SN</dt><dd class="mono">{{.Asset.Sn}}</dd></div>{{end}}
+      {{if .Asset.Price}}<div class="kv"><dt>价格</dt><dd>{{fmtMoney .Asset.Price}}</dd></div>{{end}}
+      {{if nz .Asset.Location}}<div class="kv"><dt>位置</dt><dd>{{.Asset.Location}}</dd></div>{{end}}
+      {{if nz .Asset.Remark}}<div class="kv"><dt>备注</dt><dd>{{.Asset.Remark}}</dd></div>{{end}}
+    </dl>
+  </section>
+
+  <section class="card">
+    <h2 class="sec-title">资产履历</h2>
+    <ol class="tl" aria-label="资产履历">
+      {{range .Events}}
+      <li class="tl__item {{eventClass .Type}}">
+        <span class="tl__dot" aria-hidden="true"></span>
+        <div class="tl__body">
+          <div class="tl__line">
+            <span class="chip {{eventClass .Type}}">{{eventLabel .Type}}</span>
+            {{if .Actor}}<span class="tl__actor">{{.Actor}}</span>{{end}}
+            <time class="tl__time" datetime="{{fmtRFC3339 .CreatedAt}}">{{fmtEventT .CreatedAt}}</time>
+          </div>
+          {{if .Note}}<div class="tl__note">备注：{{.Note}}</div>{{end}}
+        </div>
+      </li>
+      {{else}}
+      <li class="tl__empty">暂无履历记录</li>
+      {{end}}
+    </ol>
+  </section>
+
+  {{template "foot"}}
+</div>
+</body>
+</html>

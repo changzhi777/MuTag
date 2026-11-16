@@ -1,0 +1,40 @@
+<!-- pages/scan/scan —— 扫码首页 -->
+<view class="wrap">
+  <view class="hero">
+    <view class="hero__icon" aria-hidden="true">
+      <view class="hero__corner hero__corner--tl"></view>
+      <view class="hero__corner hero__corner--tr"></view>
+      <view class="hero__corner hero__corner--bl"></view>
+      <view class="hero__line"></view>
+    </view>
+    <view class="hero__title">扫资产码 · 查全生命周期</view>
+    <view class="hero__sub">微信扫码即可查看资产详情与履历</view>
+  </view>
+
+  <button class="scan-btn" hover-class="pressed" bindtap="onScan">扫一扫</button>
+
+  <view class="manual">
+    <view class="manual__title">或手动输入编号</view>
+    <view class="manual__row">
+      <input
+        class="manual__input"
+        placeholder="MT-2026-000001"
+        value="{{inputTag}}"
+        bindinput="onInputTag"
+        confirm-type="search"
+        bindconfirm="onManualQuery"
+      />
+      <button
+        class="manual__go {{loading ? 'manual__go--disabled' : ''}}"
+        hover-class="pressed"
+        bindtap="onManualQuery"
+      >查询</button>
+    </view>
+    <view wx:if="{{error}}" class="manual__error">{{error}}</view>
+  </view>
+
+  <view class="entries">
+    <view class="entry" hover-class="pressed" bindtap="goHistory">扫码历史</view>
+    <view class="entry" hover-class="pressed" bindtap="goMine">我的上报</view>
+  </view>
+</view>

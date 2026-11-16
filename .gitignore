@@ -1,0 +1,43 @@
+# Go
+*.exe
+*.test
+*.out
+/bin/
+backend/server
+
+# TS 增量编译缓存
+*.tsbuildinfo
+
+# 环境配置（含密钥，永不入库）
+.env
+.env.local
+
+# 本地数据（SQLite 库/WAL/seed 生成物，均可再生）
+backend/data/
+backend/scripts/seed/data.json
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# 微信开发者工具
+miniprogram/**/*.json.meta
+
+# 临时与产物
+*.xlsx.tmp
+tmp/
+node_modules/
+
+# pnpm 本地缓存
+.pnpm-store/
+
+# 本地 AI 工作上下文（会话痕迹/规划文档，不入库）
+.claude/
+.zcf/
+
+# spec-workflow MCP 工具模板（非项目代码）
+.spec-workflow/

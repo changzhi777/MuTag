@@ -1,0 +1,52 @@
+<!-- pages/detail/detail —— 资产详情：信息卡 + 履历时间线 -->
+<view class="wrap">
+  <block wx:if="{{loading}}">
+    <view class="state">加载中…</view>
+  </block>
+
+  <block wx:elif="{{error}}">
+    <view class="state state--card">
+      <view class="state__title">{{error}}</view>
+      <button class="state__btn" hover-class="pressed" bindtap="onRetry">重试</button>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="card">
+      <view class="head">
+        <view class="head__name">{{asset.name}}</view>
+        <view class="badge badge--{{asset.status}}">{{statusText}}</view>
+      </view>
+      <view class="tag-code">{{tagID}}</view>
+      <button class="act-btn" hover-class="pressed" bindtap="goActions">快捷操作（领用/归还/报修/移位）</button>
+    </view>
+
+    <view class="card">
+      <view class="sec-title">基本信息</view>
+      <view class="kv" wx:for="{{fields}}" wx:key="label">
+        <view class="kv__label">{{item.label}}</view>
+        <view class="kv__value {{item.mono ? 'kv__value--mono' : ''}}">{{item.value}}</view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="sec-title">资产履历</view>
+      <view wx:if="{{events.length === 0}}" class="tl-empty">暂无履历记录</view>
+      <view class="tl" wx:else>
+        <view class="tl__item {{item.cls}}" wx:for="{{events}}" wx:key="index">
+          <view class="tl__dot"></view>
+          <view class="tl__body">
+            <view class="tl__line">
+              <view class="chip {{item.cls}}">{{item.typeText}}</view>
+              <view wx:if="{{item.actor}}" class="tl__actor">{{item.actor}}</view>
+              <view class="tl__time">{{item.time}}</view>
+            </view>
+            <view wx:if="{{item.note}}" class="tl__note">备注：{{item.note}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="foot">青沐科技 · MuTag 资产管理</view>
+  </block>
+</view>

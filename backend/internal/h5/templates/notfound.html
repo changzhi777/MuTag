@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>页面不存在 · MuTag</title>
+<style>{{template "style"}}</style>
+</head>
+<body>
+<div class="p404">
+  <svg width="72" height="72" viewBox="0 0 72 72" fill="none" aria-hidden="true">
+    <g stroke="#D0D5DD" stroke-width="3" fill="none">
+      <rect x="8" y="8" width="20" height="20" rx="3"/>
+      <rect x="44" y="8" width="20" height="20" rx="3"/>
+      <rect x="8" y="44" width="20" height="20" rx="3"/>
+    </g>
+    <g fill="#D0D5DD">
+      <rect x="13" y="13" width="10" height="10" rx="1"/>
+      <rect x="49" y="13" width="10" height="10" rx="1"/>
+      <rect x="13" y="49" width="10" height="10" rx="1"/>
+    </g>
+    <path d="M20 52 L52 20" stroke="#98A2B3" stroke-width="4" stroke-linecap="round"/>
+  </svg>
+  <h1>{{.Title}}</h1>
+  <p>{{.Desc}}</p>
+  {{template "foot"}}
+</div>
+</body>
+</html>

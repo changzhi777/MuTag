@@ -1,0 +1,6 @@
+/* MuTag 全局样式：设计要点由 ui-ux-designer 审查后统一优化 */
+page {
+  background: #F5F7FA;
+  font-size: 28rpx;
+  color: #1F2937;
+}

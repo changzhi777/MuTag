@@ -1,0 +1,7 @@
+{
+  "desc": "MuTag 员工端页面索引",
+  "rules": [{
+    "action": "disallow",
+    "page": "*"
+  }]
+}

@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS scan_logs;
+DROP TABLE IF EXISTS asset_events;
+DROP TABLE IF EXISTS assets;
+DROP TABLE IF EXISTS tags;
+DROP TABLE IF EXISTS schema_migrations;

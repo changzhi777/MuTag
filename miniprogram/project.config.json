@@ -1,0 +1,20 @@
+{
+  "description": "MuTag 青沐动态码 · 企业资产活码小程序（员工端）",
+  "appid": "touristappid",
+  "projectname": "MuTag",
+  "compileType": "miniprogram",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "libVersion": "latest",
+  "condition": {}
+}

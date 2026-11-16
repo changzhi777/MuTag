@@ -1,0 +1,9 @@
+<view class="wrap">
+  <view wx:if="{{items.length === 0}}" class="state">暂无扫码记录</view>
+  <view wx:else class="list">
+    <view class="item" wx:for="{{items}}" wx:key="tag" data-tag="{{item.tag}}" bindtap="onTap" hover-class="pressed">
+      <view class="item__tag">{{item.tag}}</view>
+      <view class="item__time">{{item.timeText}}</view>
+    </view>
+  </view>
+</view>

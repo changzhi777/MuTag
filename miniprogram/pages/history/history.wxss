@@ -1,0 +1,44 @@
+.wrap {
+  min-height: 100vh;
+  padding: 32rpx;
+  box-sizing: border-box;
+  background: #F5F7FA;
+}
+
+.state {
+  text-align: center;
+  padding: 160rpx 0;
+  font-size: 28rpx;
+  color: #6B7280;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #FFFFFF;
+  border: 1rpx solid #E5E7EB;
+  border-radius: 16rpx;
+  padding: 24rpx;
+}
+
+.item__tag {
+  font-size: 28rpx;
+  font-family: ui-monospace, Menlo, monospace;
+  color: #344054;
+}
+
+.item__time {
+  font-size: 24rpx;
+  color: #6B7280;
+}
+
+.pressed {
+  opacity: 0.7;
+}

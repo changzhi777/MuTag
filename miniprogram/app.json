@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "pages/scan/scan",
+    "pages/detail/detail",
+    "pages/actions/actions",
+    "pages/mine/mine",
+    "pages/history/history"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#1F2937",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "MuTag 资产活码",
+    "backgroundColor": "#F5F6F8"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}
