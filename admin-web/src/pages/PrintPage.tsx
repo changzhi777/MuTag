@@ -151,6 +151,31 @@ export default function PrintPage() {
   }, [chosen, tpl]);
 
   // 单枚标签容器：挂载 qr-code-styling SVG（样式/资产变化即重渲）
+  const downloadOne = async (asset: Asset, fmt: "png" | "svg") => {
+    try {
+      const holder = document.createElement("div");
+      holder.style.cssText = "position:fixed;left:-9999px;top:-9999px;";
+      document.body.appendChild(holder);
+      const qr = new QRCodeStyling({
+        ...styleToOptions(style, `${window.location.origin}/t/${asset.tag_id}`, 800),
+        width: 800,
+        height: 800,
+        type: fmt === "png" ? ("canvas" as const) : ("svg" as const)
+      });
+      qr.append(holder);
+      const blob = (await qr.getRawData(fmt === "png" ? "png" : "svg")) as Blob;
+      holder.remove();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${asset.tag_id}_${asset.name.slice(0, 20)}.${fmt}`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      message.success(`已下载 ${fmt.toUpperCase()}：${asset.tag_id}`);
+    } catch (e) {
+      message.error((e as Error).message);
+    }
+  };
+
   const TagCell = ({ asset, px }: { asset: Asset; px: number }) => {
     const boxRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -167,6 +192,10 @@ export default function PrintPage() {
     }, [asset.tag_id, px, style]);
     return (
       <div className="mt-tag" style={{ width: `${tpl.tw}mm`, height: `${tpl.th}mm` }}>
+        <div className="mt-tag-dl print-hide">
+          <button title="下载 PNG" onClick={() => void downloadOne(asset, "png")}>PNG</button>
+          <button title="下载 SVG（矢量）" onClick={() => void downloadOne(asset, "svg")}>SVG</button>
+        </div>
         <div ref={boxRef} className="mt-tag-qr" style={{ width: `${tpl.qrmm}mm`, height: `${tpl.qrmm}mm` }} />
         <div className="mt-tag-text">
           {fields.includes("name") && <div className="mt-t-name">{asset.name}</div>}
@@ -253,6 +282,10 @@ export default function PrintPage() {
         }
         .mt-tag { display: flex; align-items: center; gap: 2mm; padding: 1.5mm; box-sizing: border-box; border: 0.2mm dashed #bbb; }
         .mt-tag-qr svg { width: 100%; height: 100%; }
+        .mt-tag { position: relative; }
+        .mt-tag-dl { position: absolute; top: 0; right: 0; display: none; gap: 2px; z-index: 2; }
+        .mt-tag:hover .mt-tag-dl { display: flex; }
+        .mt-tag-dl button { font-size: 8pt; padding: 0 4px; cursor: pointer; background: #0D9488; color: #fff; border: none; border-radius: 2px; }
         .mt-tag-text { flex: 1; min-width: 0; overflow: hidden; }
         .mt-t-name { font-weight: 600; font-size: 9pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .mt-t-code { font-family: monospace; font-size: 8pt; letter-spacing: 0.5px; }
