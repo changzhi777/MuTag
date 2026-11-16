@@ -1,0 +1,12 @@
+/* 表格编辑页（react-data-grid）辅助样式 */
+
+/* 改动单元格高亮：与快照不同的列 */
+.rdg-dirty {
+  background-color: #fff7e6;
+  box-shadow: inset 0 0 0 1px #ffa940;
+}
+
+/* 网格容器铺满卡片 */
+.fill-grid {
+  --rdg-color: #0d9488;
+}

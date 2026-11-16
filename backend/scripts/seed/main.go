@@ -55,7 +55,7 @@ func main() {
 	}
 	defer database.Close()
 
-	if err := db.Migrate(ctx, database); err != nil {
+	if err := db.Migrate(ctx, database, db.DialectSQLite); err != nil {
 		log.Fatalf("migrate: %v", err)
 	}
 

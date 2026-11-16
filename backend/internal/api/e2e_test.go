@@ -456,6 +456,48 @@ func TestE2EFinanceChain(t *testing.T) {
 	})
 }
 
+// 网格编辑通道：_tag_id 直指已有资产（不走模板列名反查，SN 缺失也能精确匹配）
+func TestE2EGridEdit(t *testing.T) {
+	gr := newTestRouter(t)
+
+	w := gr.do(t, http.MethodPost, "/api/admin/fin/import/preview", `{"mapping_id":"generic","rows":[
+		{"_tag_id":"MT-2026-000002","name":"网格改名资产","price":"50.5","status":"idle"},
+		{"_tag_id":"MT-2026-999999","name":"不存在的码"},
+		{"_tag_id":"MT-2026-000003","price":"abc"}
+	]}`)
+	var body struct {
+		BatchID string `json:"batch_id"`
+		Summary struct {
+			Creates int `json:"creates"`
+			Updates int `json:"updates"`
+			Errors  int `json:"errors"`
+		} `json:"summary"`
+		Updates []struct {
+			TagID string            `json:"tag_id"`
+			New   map[string]string `json:"new"`
+			Old   map[string]string `json:"old"`
+		} `json:"updates"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("code=%d body=%s", w.Code, w.Body.String())
+	}
+	if body.Summary.Updates != 1 || body.Summary.Errors != 2 {
+		t.Fatalf("网格差异计数不符: %+v body=%s", body.Summary, w.Body.String())
+	}
+	if len(body.Updates) == 1 && body.Updates[0].TagID != "MT-2026-000002" {
+		t.Fatalf("更新应命中 002: %+v", body.Updates)
+	}
+
+	// 确认 → 库内生效（改名 + 状态 idle + 价格 50.50）
+	if w := gr.do(t, http.MethodPost, "/api/admin/fin/import/batches/"+body.BatchID+"/confirm", ""); w.Code != http.StatusOK {
+		t.Fatalf("confirm: %d %s", w.Code, w.Body.String())
+	}
+	a, _ := gr.deps.Store.Assets().GetByTagID(testCtx(), "MT-2026-000002")
+	if a.Name != "网格改名资产" || a.Status != domain.AssetIdle || a.Price == nil || *a.Price != 50.5 {
+		t.Fatalf("网格编辑未生效: %s %s %.2f", a.Name, a.Status, derefPrice(a.Price))
+	}
+}
+
 // derefPrice *float64 → 文本（断言辅助）。
 func derefPrice(p *float64) float64 {
 	if p == nil {

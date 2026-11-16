@@ -284,7 +284,8 @@ func (d Deps) importPreview(c *gin.Context) {
 	})
 }
 
-// diffRows 反向解析（模板列名 → 系统字段）+ 与库内比对（SN 匹配）→ 差异明细。
+// diffRows 反向解析（模板列名 → 系统字段）+ 与库内比对 → 差异明细。
+// 匹配优先级：_tag_id（网格编辑场景，直指已有资产）> SN > 新增。
 func (d Deps) diffRows(ctx context.Context, m *domain.FinMapping, rows []map[string]any) (*repo.ImportItems, error) {
 	// 反查表：模板列名 → 字段；状态反向字典：中文 → 系统值
 	fieldByCol := map[string]domain.FinColumn{}
@@ -300,8 +301,47 @@ func (d Deps) diffRows(ctx context.Context, m *domain.FinMapping, rows []map[str
 	items := &repo.ImportItems{}
 	seenSN := map[string]bool{}
 
+rowLoop:
 	for i, raw := range rows {
 		rowNo := i + 2 // 表头占第 1 行，与 Excel 行号对齐
+
+		// 网格编辑通道：_tag_id 直指已有资产（跳过模板反查，字段名直用系统名）
+		if tagID := strings.TrimSpace(cellText(raw["_tag_id"])); tagID != "" {
+			a, err := d.Store.Assets().GetByTagID(ctx, tagID)
+			if err != nil {
+				items.Errors = append(items.Errors,
+					repo.ImportError{Row: rowNo, Reason: "码号不存在：" + tagID})
+				continue
+			}
+			fields := map[string]string{}
+			for k, v := range raw {
+				if !strings.HasPrefix(k, "_") && repo.ImportableFields()[k] {
+					s := strings.TrimSpace(cellText(v))
+					if s == "" {
+						continue
+					}
+					// 与模板通道同级的格式校验（错误行不入库）
+					switch k {
+					case "price":
+						if _, err := repo.ParsePrice(s); err != nil {
+							items.Errors = append(items.Errors, repo.ImportError{Row: rowNo, Reason: err.Error()})
+							continue rowLoop
+						}
+					case "buy_date", "warranty_end":
+						if _, err := repo.ParseDayField(s); err != nil {
+							items.Errors = append(items.Errors, repo.ImportError{Row: rowNo, Reason: err.Error()})
+							continue rowLoop
+						}
+					}
+					fields[k] = s
+				}
+			}
+			if up := diffUpdate(rowNo, a, fields); up != nil {
+				items.Updates = append(items.Updates, *up)
+			}
+			continue
+		}
+
 		fields, rowErr := parseRowFields(fieldByCol, revStatus, raw)
 		if rowErr != nil {
 			items.Errors = append(items.Errors, repo.ImportError{Row: rowNo, Reason: rowErr.Error()})
@@ -419,7 +459,8 @@ func diffUpdate(rowNo int, a *domain.Asset, fields map[string]string) *repo.Impo
 	up := &repo.ImportUpdate{Row: rowNo, AssetID: a.AssetID, TagID: a.TagID,
 		New: map[string]string{}, Old: map[string]string{}}
 	for f, nv := range fields {
-		if cv, ok := current[f]; ok && cv != nv {
+		cv := current[f] // 库内空值（无 key）视为 ""——"空→有值"也是变化
+		if cv != nv {
 			up.New[f], up.Old[f] = nv, cv
 		}
 	}
