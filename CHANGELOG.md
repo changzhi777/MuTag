@@ -1,3 +1,12 @@
+## V1.0.4 (2026-11-17 02:10 CST)
+
+- 🔳 QR 贴码印刷套件（对标草料 B 档）：标签模板 4 规格 + 字段勾选 + 批量多选 + A4 切刀线打印 + PNG zip 导出
+- 🎨 码美化全量（qr-code-styling MIT）：点阵形状/颜色渐变/角块/容错/logo 嵌入/透明背景，样式持久化
+- 📈 扫码统计：/tags/scan-stats 聚合 API（+e2e）+ 码管理页扫码次数/最近扫码列
+- ☁️ Supabase 生产实证补完：应用/备份切直连（pooler 3F000 免疫）+ pg_dump 17 客户端 + 每日备份 cron（14 份轮换）
+- 🔐 管理后台登录修复（ADMIN_PASSWORD 重设）+ 生产首次更新流程实战（git pull → build → restart）
+- 锚定 8d7f982；验证：e2e 全绿（SQLite+Supabase 双形态）+ 生产 HTTPS 全链路 + CI 双 job
+
 ## V1.0.3 (2026-11-17 00:52 CST)
 
 - 📊 台账表格编辑：react-data-grid（MIT 深挖选型）行内编辑 → 差异预览 → 确认入库（_tag_id 直匹配通道）
