@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -47,15 +48,34 @@ func newTestRouterWithPassword(t *testing.T, password string) *ginRouter {
 }
 
 // newTestDeps 测试基建：临时库 + 迁移 + 造数 3 条 + 默认 deps（限流关闭）。
+// 双形态实证开关：MUTAG_TEST_PG_DSN 有值时全套 e2e 跑在真 PG（如 Supabase）上——
+// 双方言同一套测试，是"切换点收敛"的最终实证；无值默认 SQLite（TempDir 隔离）。
 func newTestDeps(t *testing.T) (Deps, *sql.DB) {
 	t.Helper()
-	database, err := db.OpenSQLite(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("open sqlite: %v", err)
+	var dialect db.Dialect
+	var database *sql.DB
+	var err error
+
+	if dsn := os.Getenv("MUTAG_TEST_PG_DSN"); dsn != "" {
+		dialect = db.DialectPostgres
+		database, err = db.OpenPostgres(dsn)
+		if err != nil {
+			t.Fatalf("open pg: %v", err)
+		}
+		// 测试库独占：清空 public schema 防上次运行残留
+		if _, err := database.Exec(`DROP SCHEMA public CASCADE; CREATE SCHEMA public;`); err != nil {
+			t.Fatalf("reset pg schema: %v", err)
+		}
+	} else {
+		dialect = db.DialectSQLite
+		database, err = db.OpenSQLite(filepath.Join(t.TempDir(), "test.db"))
+		if err != nil {
+			t.Fatalf("open sqlite: %v", err)
+		}
 	}
 	t.Cleanup(func() { database.Close() })
 
-	if err := db.Migrate(testCtx(), database, db.DialectSQLite); err != nil {
+	if err := db.Migrate(testCtx(), database, dialect); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 	renderer, err := h5.NewRenderer()
