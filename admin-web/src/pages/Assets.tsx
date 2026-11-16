@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import {
   Button, Drawer, Form, Input, InputNumber, Modal, Select, Space, Table, Tag, message
 } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import { PlusOutlined, ScanOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import { api, post, put } from "../api/client";
 import { STATUS_COLOR, STATUS_TEXT, type Asset, type AssetDraft, type AssetStatus } from "../types";
+import ScanCamera from "./ScanCamera";
 
 const STATUS_OPTIONS = Object.entries(STATUS_TEXT).map(([value, label]) => ({ value, label }));
 
@@ -21,6 +22,7 @@ export default function Assets() {
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const [editing, setEditing] = useState<Asset | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -91,6 +93,7 @@ export default function Assets() {
           onChange={(v) => { setPage(1); setStatusFilter(v || ""); }}
           style={{ width: 120 }}
         />
+        <Button icon={<ScanOutlined style={{ fontSize: 15 }} />} onClick={() => setScanOpen(true)}>扫码识别</Button>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreating(true)}>
           新建资产
         </Button>
@@ -129,6 +132,16 @@ export default function Assets() {
           />
         )}
       </Drawer>
+
+      <ScanCamera
+        open={scanOpen}
+        onClose={() => setScanOpen(false)}
+        onDetected={(tagID) => {
+          setKeyword(tagID);
+          setPage(1);
+          void load();
+        }}
+      />
     </div>
   );
 }
