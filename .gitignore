@@ -44,3 +44,6 @@ node_modules/
 
 # Playwright MCP 快照产物
 .playwright-mcp/
+
+# 部署排障截图（本地留档，不入库）
+deploy/tencent/screenshots/
