@@ -33,7 +33,8 @@ case "$MODE" in
     SHORT=$(git rev-parse --short HEAD)
     NOW=$(date +"%Y-%m-%d %H:%M %Z")
 
-    echo "V$V" > VERSION
+    # calc 已带 V 前缀，直接写（勿再加）
+    echo "$V" > VERSION
     printf '{"version":"%s","released_at":"%s","git_sha":"%s"}\n' \
       "$V" "$(date -u +%Y-%m-%dT%H:%M:%S+00:00)" "$SHORT" > version.json
 

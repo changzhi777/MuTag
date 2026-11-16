@@ -1,3 +1,7 @@
+## V1.0.2 (2026-11-16 23:25 CST)
+
+- 发版：见 git log a432893..HEAD 与 CLAUDE.md changelog
+
 # MuTag 版本变更记录
 
 > 规程：V1.0.x 第 3 位递增（`sh scripts/next_version.sh apply patch` 一条命令全自动）
