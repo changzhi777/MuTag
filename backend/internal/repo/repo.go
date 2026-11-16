@@ -63,6 +63,12 @@ func timeFromText(s string) (time.Time, error) {
 	return time.Parse(time.RFC3339, s)
 }
 
+// nowText 方言中立的当前时间戳（与 SQLite strftime 默认值同格式：UTC 毫秒 +00:00）。
+// 应用层显式传值，SQL 不含任何方言函数——PG 切换点收敛在 internal/db。
+func nowText() string {
+	return time.Now().UTC().Format("2006-01-02T15:04:05.000+00:00")
+}
+
 // dateFromNull TEXT 日期（YYYY-MM-DD）→ *time.Time。
 func dateFromNull(s sql.NullString) (*time.Time, error) {
 	if !s.Valid || s.String == "" {

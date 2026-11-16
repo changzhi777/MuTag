@@ -18,6 +18,7 @@ type Config struct {
 	WeappJumpURL  string  // 活码 302 微信内跳转目标（M2 配置后启用小程序唤起）
 	RateBurst     float64 // 扫码限流桶容量（突发上限；<=0 关闭限流，纪律 4）
 	RatePerSec    float64 // 扫码限流每秒回填令牌数
+	DatabaseURL   string  // PG 连接串（有值 = 上线形态；空 = SQLite 开发形态）
 }
 
 func envOr(key, fallback string) string {
@@ -49,5 +50,6 @@ func Load() Config {
 		WeappJumpURL:  os.Getenv("WEAPP_JUMP_URL"),
 		RateBurst:     envFloat("RATE_LIMIT_BURST", 30),
 		RatePerSec:    envFloat("RATE_LIMIT_PER_SEC", 5),
+		DatabaseURL:   os.Getenv("DATABASE_URL"),
 	}
 }

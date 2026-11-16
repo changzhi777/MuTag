@@ -42,8 +42,8 @@ func (r *TagRepo) scanRow(ctx context.Context, query, key string) (*domain.Tag, 
 // Insert 新建码（qr_scene 可空）。
 func (r *TagRepo) Insert(ctx context.Context, t *domain.Tag) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO tags (tag_id, qr_scene, url_code, status) VALUES (?, NULLIF(?, ''), ?, ?)`,
-		t.TagID, t.QrScene, t.UrlCode, t.Status)
+		`INSERT INTO tags (tag_id, qr_scene, url_code, status, created_at) VALUES (?, NULLIF(?, ''), ?, ?, ?)`,
+		t.TagID, t.QrScene, t.UrlCode, t.Status, nowText())
 	return err
 }
 

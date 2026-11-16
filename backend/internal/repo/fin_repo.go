@@ -205,8 +205,8 @@ func (r *MappingRepo) Update(ctx context.Context, mappingID string, def *domain.
 	}
 	res, err := r.db.ExecContext(ctx,
 		`UPDATE fin_mappings SET mapping=?, version=version+1,
-		 updated_at=strftime('%Y-%m-%dT%H:%M:%f+00:00','now') WHERE mapping_id=?`,
-		string(defText), mappingID)
+		 updated_at=? WHERE mapping_id=?`,
+		string(defText), nowText(), mappingID)
 	if err != nil {
 		return err
 	}
@@ -221,9 +221,10 @@ func insertMapping(ctx context.Context, q dbtx, m *domain.FinMapping) error {
 	if err != nil {
 		return err
 	}
+	now := nowText()
 	_, err = q.ExecContext(ctx,
-		`INSERT INTO fin_mappings (mapping_id, name, kind, mapping, version) VALUES (?, ?, ?, ?, ?)`,
-		m.MappingID, m.Name, m.Kind, string(defText), m.Version)
+		`INSERT INTO fin_mappings (mapping_id, name, kind, mapping, version, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		m.MappingID, m.Name, m.Kind, string(defText), m.Version, now, now)
 	return err
 }
 
@@ -241,8 +242,8 @@ func (r *ExportJobRepo) Create(ctx context.Context, job *domain.ExportJob) error
 		return err
 	}
 	_, err = r.db.ExecContext(ctx,
-		`INSERT INTO export_jobs (job_id, mapping_id, filters, actor, row_count) VALUES (?, ?, ?, ?, ?)`,
-		job.JobID, job.MappingID, string(filters), job.Actor, job.RowCount)
+		`INSERT INTO export_jobs (job_id, mapping_id, filters, actor, row_count, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+		job.JobID, job.MappingID, string(filters), job.Actor, job.RowCount, nowText())
 	return err
 }
 
@@ -293,9 +294,9 @@ func (r *ImportBatchRepo) CreatePreview(ctx context.Context, b *domain.ImportBat
 		return err
 	}
 	_, err = r.db.ExecContext(ctx,
-		`INSERT INTO import_batches (batch_id, mapping_id, file_name, summary, items, status, actor)
-		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		b.BatchID, b.MappingID, b.FileName, string(summary), string(itemsText), string(b.Status), b.Actor)
+		`INSERT INTO import_batches (batch_id, mapping_id, file_name, summary, items, status, actor, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		b.BatchID, b.MappingID, b.FileName, string(summary), string(itemsText), string(b.Status), b.Actor, nowText())
 	return err
 }
 
@@ -425,8 +426,8 @@ func (r *ImportBatchRepo) ConfirmBatch(ctx context.Context, batchID, actor strin
 	}
 	if _, err := tx.ExecContext(ctx,
 		`UPDATE import_batches SET items=?, status='confirmed',
-		 confirmed_at=strftime('%Y-%m-%dT%H:%M:%f+00:00','now') WHERE batch_id=?`,
-		string(itemsText), batchID); err != nil {
+		 confirmed_at=? WHERE batch_id=?`,
+		string(itemsText), nowText(), batchID); err != nil {
 		return 0, 0, err
 	}
 	return created, updated, tx.Commit()
@@ -481,7 +482,7 @@ func (r *ImportBatchRepo) RollbackBatch(ctx context.Context, batchID, actor stri
 	}
 	if _, err := tx.ExecContext(ctx,
 		`UPDATE import_batches SET status='rolled_back',
-		 rolled_back_at=strftime('%Y-%m-%dT%H:%M:%f+00:00','now') WHERE batch_id=?`, batchID); err != nil {
+		 rolled_back_at=? WHERE batch_id=?`, nowText(), batchID); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -511,8 +512,8 @@ func itemsOf(raw map[string]any) (*ImportItems, error) {
 
 func insertTagTx(ctx context.Context, tx *sql.Tx, tagID string) error {
 	_, err := tx.ExecContext(ctx,
-		`INSERT INTO tags (tag_id, qr_scene, url_code, status) VALUES (?, ?, ?, 'active')`,
-		tagID, "t:"+tagID, tagID)
+		`INSERT INTO tags (tag_id, qr_scene, url_code, status, created_at) VALUES (?, ?, ?, 'active', ?)`,
+		tagID, "t:"+tagID, tagID, nowText())
 	return err
 }
 
@@ -539,12 +540,12 @@ func insertAssetFromFields(ctx context.Context, tx *sql.Tx, tagID string, fields
 		status = string(domain.AssetInUse)
 	}
 	res, err := tx.ExecContext(ctx, `INSERT INTO assets
-		(tag_id, name, category, model, sn, buy_date, price, dept_id, keeper, location, status, unit, warranty_end, remark)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		(tag_id, name, category, model, sn, buy_date, price, dept_id, keeper, location, status, unit, warranty_end, remark, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		tagID, name, nullIfEmpty(fields["category"]), nullIfEmpty(fields["model"]), nullIfEmpty(fields["sn"]),
 		dateArg(buyDate), price, nullIfEmpty(fields["dept_id"]), nullIfEmpty(fields["keeper"]),
 		nullIfEmpty(fields["location"]), domain.AssetStatus(status), nullIfEmpty(fields["unit"]),
-		dateArg(warrantyEnd), nullIfEmpty(fields["remark"]))
+		dateArg(warrantyEnd), nullIfEmpty(fields["remark"]), nowText(), nowText())
 	if err != nil {
 		return 0, err
 	}
@@ -583,11 +584,17 @@ func updateAssetFields(ctx context.Context, tx *sql.Tx, assetID int64, fields ma
 	if len(sets) == 0 {
 		return nil
 	}
-	args = append(args, assetID)
-	_, err := tx.ExecContext(ctx,
+	args = append(args, nowText(), assetID) // 占位符顺序：字段... → updated_at → WHERE asset_id
+	res, err := tx.ExecContext(ctx,
 		`UPDATE assets SET `+strings.Join(sets, ", ")+`,
-		 updated_at=strftime('%Y-%m-%dT%H:%M:%f+00:00','now') WHERE asset_id=?`, args...)
-	return err
+		 updated_at=? WHERE asset_id=?`, args...)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return fmt.Errorf("资产 %d 不存在，更新 0 行", assetID)
+	}
+	return nil
 }
 
 // insertEventTx 事务内写履历快照（old/new 为字段字符串表）。
@@ -612,9 +619,9 @@ func insertEventTx(ctx context.Context, tx *sql.Tx, assetID int64, typ domain.Ev
 		}
 	}
 	_, err := tx.ExecContext(ctx,
-		`INSERT INTO asset_events (asset_id, type, actor, old_value, new_value, note)
-		 VALUES (?, ?, ?, ?, ?, ?)`,
-		assetID, typ, actor, oldJSON, newJSON, note)
+		`INSERT INTO asset_events (asset_id, type, actor, old_value, new_value, note, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		assetID, typ, actor, oldJSON, newJSON, note, nowText())
 	return err
 }
 

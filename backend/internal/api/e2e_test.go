@@ -55,7 +55,7 @@ func newTestDeps(t *testing.T) (Deps, *sql.DB) {
 	}
 	t.Cleanup(func() { database.Close() })
 
-	if err := db.Migrate(testCtx(), database); err != nil {
+	if err := db.Migrate(testCtx(), database, db.DialectSQLite); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 	renderer, err := h5.NewRenderer()

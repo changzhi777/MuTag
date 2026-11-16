@@ -1,8 +1,9 @@
-// MuTag 活码服务入口：配置加载 → SQLite → 自动迁移 → HTTP 服务 → 优雅退出。
+// MuTag 活码服务入口：配置加载 → 数据库（SQLite 开发 / PG 上线）→ 自动迁移 → HTTP 服务 → 优雅退出。
 package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	_ "github.com/jackc/pgx/v5/stdlib" // 注册 "pgx" driver（PG 上线形态）
 
 	"github.com/gin-gonic/gin"
 
@@ -27,14 +30,23 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	database, err := db.OpenSQLite(cfg.SQLitePath)
+	// 存储形态：DATABASE_URL 有值 → PG16；否则 SQLite（零外部依赖）
+	dialect := db.DialectSQLite
+	var database *sql.DB
+	var err error
+	if cfg.DatabaseURL != "" {
+		dialect = db.DialectPostgres
+		database, err = db.OpenPostgres(cfg.DatabaseURL)
+	} else {
+		database, err = db.OpenSQLite(cfg.SQLitePath)
+	}
 	if err != nil {
-		log.Fatalf("sqlite: %v", err)
+		log.Fatalf("database: %v", err)
 	}
 	defer database.Close()
 
-	// 启动即自动迁移（幂等）
-	if err := db.Migrate(ctx, database); err != nil {
+	// 启动即自动迁移（幂等，方言独立版本线）
+	if err := db.Migrate(ctx, database, dialect); err != nil {
 		log.Fatalf("migrate: %v", err)
 	}
 

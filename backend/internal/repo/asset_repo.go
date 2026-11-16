@@ -27,12 +27,14 @@ func (r *AssetRepo) GetByTagID(ctx context.Context, tagID string) (*domain.Asset
 
 // Create 新建资产，返回 asset_id。
 func (r *AssetRepo) Create(ctx context.Context, a *domain.Asset) (int64, error) {
+	now := nowText()
 	res, err := r.db.ExecContext(ctx,
 		`INSERT INTO assets (tag_id, name, category, model, sn, buy_date, price,
-			dept_id, keeper, location, status, unit, warranty_end, remark)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			dept_id, keeper, location, status, unit, warranty_end, remark, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		a.TagID, a.Name, a.Category, a.Model, a.Sn, dateToText(a.BuyDate), a.Price,
-		a.DeptID, a.Keeper, a.Location, a.Status, a.Unit, dateToText(a.WarrantyEnd), a.Remark)
+		a.DeptID, a.Keeper, a.Location, a.Status, a.Unit, dateToText(a.WarrantyEnd), a.Remark,
+		now, now)
 	if err != nil {
 		return 0, err
 	}
@@ -127,19 +129,19 @@ func (r *AssetRepo) Update(ctx context.Context, a *domain.Asset) error {
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE assets SET name=?, category=?, model=?, sn=?, buy_date=?, price=?,
 		 dept_id=?, keeper=?, location=?, status=?, unit=?, warranty_end=?, remark=?,
-		 updated_at=strftime('%Y-%m-%dT%H:%M:%f+00:00','now')
+		 updated_at=?
 		 WHERE tag_id=?`,
 		a.Name, a.Category, a.Model, a.Sn, dateToText(a.BuyDate), a.Price,
 		a.DeptID, a.Keeper, a.Location, a.Status, a.Unit, dateToText(a.WarrantyEnd), a.Remark,
-		a.TagID)
+		nowText(), a.TagID)
 	return err
 }
 
 // SetStatus 更新资产状态（作废联动用）。
 func (r *AssetRepo) SetStatus(ctx context.Context, tagID string, status domain.AssetStatus) error {
 	_, err := r.db.ExecContext(ctx,
-		`UPDATE assets SET status=?, updated_at=strftime('%Y-%m-%dT%H:%M:%f+00:00','now') WHERE tag_id=?`,
-		status, tagID)
+		`UPDATE assets SET status=?, updated_at=? WHERE tag_id=?`,
+		status, nowText(), tagID)
 	return err
 }
 

@@ -57,9 +57,9 @@ func (r *EventRepo) Create(ctx context.Context, e *domain.AssetEvent) error {
 		return err
 	}
 	_, err = r.db.ExecContext(ctx,
-		`INSERT INTO asset_events (asset_id, type, actor, old_value, new_value, note)
-		 VALUES (?, ?, ?, ?, ?, ?)`,
-		e.AssetID, e.Type, e.Actor, oldJSON, newJSON, e.Note)
+		`INSERT INTO asset_events (asset_id, type, actor, old_value, new_value, note, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		e.AssetID, e.Type, e.Actor, oldJSON, newJSON, e.Note, nowText())
 	return err
 }
 
