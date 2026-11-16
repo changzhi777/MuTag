@@ -41,3 +41,6 @@ node_modules/
 
 # spec-workflow MCP 工具模板（非项目代码）
 .spec-workflow/
+
+# Playwright MCP 快照产物
+.playwright-mcp/
