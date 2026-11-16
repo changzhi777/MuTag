@@ -29,7 +29,7 @@
 ```
 
 技术选型（对齐现有栈与家庭实验室经验）：
-- **后端**：Go 1.26 + Gin + PG16 + Redis7（与沐禾 backend-go 同栈，运维经验直接复用）
+- **后端**：Go 1.26 + Gin + PG17 + Redis7（与沐禾 backend-go 同栈，运维经验直接复用）
 - **小程序**：原生微信小程序（优先）+ 轻量 H5 落地页（活码 302 目标，服务外部扫码场景）
 - **管理后台**：Vue3 + Element Plus（或复用沐禾 frontend React 经验选 React + AntD，二选一后钉死）
 - **码图生成**：微信 `getUnlimitedQRCode`（scene=tagId，生成永久小程序码）+ 自绘普通二维码（URL 活码）双轨

@@ -5,7 +5,7 @@
 | 形态 | 存储 | 缓存 | 用途 |
 |---|---|---|---|
 | **开发/验收（当前）** | SQLite（modernc 纯 Go 驱动，`backend/data/mutag.db`） | 进程内 TTL 缓存（`internal/cache`） | 零外部依赖，`go run` 直跑 |
-| **上线（M2+）** | PG16 + Redis7（本目录 compose） | Redis 60s TTL | 118/PVE CT 部署 |
+| **上线（M2+）** | PG17 + Redis7（本目录 compose） | Redis 60s TTL | 118/PVE CT 部署 |
 
 切换点收敛在三处：连接层（`internal/db` OpenSQLite ↔ pgx pool）、迁移方言（`internal/db/migrations/` 各自维护）、缓存注入（`cache.TTLCache` ↔ go-redis）。
 
@@ -36,7 +36,7 @@ curl -i localhost:8080/t/MT-2026-000001
 ## PG 上线形态（M2+ 启用）
 
 ```bash
-cd deploy && docker compose up -d      # PG16(:5433) + Redis7(:6380)
+cd deploy && docker compose up -d      # PG17(:5433) + Redis7(:6380)
 ```
 
 部署目标为家庭实验室 PVE CT（deploy-ct151 模式），后端多阶段构建见 `backend/Dockerfile`（当前构建目标 SQLite 形态；PG 形态切回 pgx 连接层后同 Dockerfile 流程）。

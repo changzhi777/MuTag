@@ -54,5 +54,5 @@ curl -i localhost:8080/t/MT-2026-000001   # 302 → H5 详情
 
 - **离线构建**：本机沙箱代理 TLS 拦截 Go proxy，依赖走模块缓存（gin v1.12.0 / modernc sqlite v1.60.1），`GOFLAGS="-mod=mod -buildvcs=false" GOPROXY=off GOSUMDB=off`；在线环境正常 `go mod tidy` 即可
 - **迁移器**：自研轻量迁移器（`internal/db`，schema_migrations 版本表 + embed SQL，幂等）
-- **存储形态**：SQLite（modernc 纯 Go）+ 内存 TTL 缓存为开发/验收形态；PG16+Redis7 为上线形态（`deploy/docker-compose.yml` 保留，切换点见 deploy/README.md）
+- **存储形态**：SQLite（modernc 纯 Go）+ 内存 TTL 缓存为开发/验收形态；PG17+Redis7 为上线形态（`deploy/docker-compose.yml` 保留，切换点见 deploy/README.md）
 - **seed 幂等**：库中已有资产时拒绝重复导入；两步导入（xlsx → JSON → 入库）

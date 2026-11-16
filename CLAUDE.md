@@ -12,7 +12,7 @@
 | 日期 | 版本 | 变更内容 |
 |------|------|----------|
 | 2026-11-16 | V1.0 | 🆕 首轮初始化（规划态）：项目为**零代码纯设计稿阶段**，仅存在设计方案 v0.1 + `.spec-workflow/` 工具模板；生成根级 CLAUDE.md + 基座级 index.json；按设计方案提炼 4 个规划模块（目录均未创建，暂不生成模块级 CLAUDE.md）；画出规划架构 Mermaid 图；录入关键纪律 / M1-M4 里程碑 / 3 项待定问题 |
-| 2026-11-16 | V1.1 | 🚀 **M1 落地（活码双链路）**：backend（Go 1.26+Gin+SQLite）+ miniprogram（原生，scan/detail 两页）+ deploy（验收脚本）建成；xlsx 真实数据 64 行→一物一码 74 条导入；**存储形态裁决：开发/验收 SQLite+内存缓存（零外部依赖），PG16+Redis7 保留为上线形态**；自研轻量迁移器替代 golang-migrate（离线缓存断供）；ui-ux-designer 设计+审查闭环（0 P0，P1×3/P2×16 已修）；README/deploy/README/verify.sh 同步实态 |
+| 2026-11-16 | V1.1 | 🚀 **M1 落地（活码双链路）**：backend（Go 1.26+Gin+SQLite）+ miniprogram（原生，scan/detail 两页）+ deploy（验收脚本）建成；xlsx 真实数据 64 行→一物一码 74 条导入；**存储形态裁决：开发/验收 SQLite+内存缓存（零外部依赖），PG17+Redis7 保留为上线形态**；自研轻量迁移器替代 golang-migrate（离线缓存断供）；ui-ux-designer 设计+审查闭环（0 P0，P1×3/P2×16 已修）；README/deploy/README/verify.sh 同步实态 |
 | 2026-11-16 | V1.2 | 🏢 **M3 提前落地（管理后台，财务留 M4）**：admin-web（React 19 + AntD 6 + Vite + TS）——登录/台账 CRUD/码管理/批量导入/统计四模块；**框架选型拍板 React+AntD（待定问题 1 关闭）**；xlsx 前端 SheetJS 解析（后端零新依赖）；构建产物 embed 进 Go 二进制（/admin SPA fallback）；鉴权 = env ADMIN_PASSWORD + HMAC token（空=免鉴权）；**进程内 e2e 全链集成测试**（14 项，绕沙箱端口限制）全绿；踩坑：Go fmt 不支持 %*d、gin FileFromFS 内部 FileServer 对 index.html 301 |
 | 2026-11-16 | V1.3 | 📱 **M2 主体落地（小程序闭环，真机联调留余）**：users 表（0002 迁移）+ 员工端登录（**dev 模式：WECHAT_APPID 未配时 openid=mock(code)，配凭证即切真 code2session**）+ 快捷操作四动作（领用/归还/报修/位置变更，写 event 纪律）+ 我的上报 + 扫码历史（本地缓存 100 条）+ 302 分流 WEAPP_JUMP_URL 可配；管理后台补**码版面打印**（前端 qrcode 生成活码 URL 码图 + A4 打印，M3 出口物理闭环）；e2e 扩至员工链路（dev 登录→四动作→我的上报）全绿 |
 | 2026-11-16 | V1.4 | 💰 **M4 落地（财务对接全链路）**：0003 迁移三表（fin_mappings / export_jobs / import_batches）；**内置四模板播种**（用友U8固定资产卡片/金蝶云星空/管家婆/通用台账，kind 幂等 + version 递增）；**映射层格式转换收敛**（金额两位小数/状态中文/日期格式全在模板 def）；导出 = 模板映射输出行 + 后端审计留痕（操作人+过滤条件，XLSX 仍由前端 SheetJS 生成——延续 M3 零新依赖裁决）；**导入两段式**（preview 落库 pending → SN 匹配差异比对（新增/更新/错误行标红）→ confirm 事务入库并回填明细 → rollback 事务反向恢复（新增删资产+码置 void，更新按 old 快照回写））；后台新增「财务对接」页三 Tab（财务导入/导出/模板配置）；e2e 财务链路五段全绿；AssetFilter 扩 dept/入账区间，List 支持全量不分页；GOCACHE 需指到可写目录（沙箱拒写 ~/Library/Caches） |
@@ -25,7 +25,7 @@
 ## ⚠️ 项目现状声明（先读这段）
 
 - **M1 已落地（2026-11-16）**：`backend/`（活码服务）+ `miniprogram/`（员工端两页）+ `deploy/`（验收）+ `README.md` 均已存在并可运行；出口标准「外部扫码看到资产页」已通过 `bash deploy/verify.sh` 七连检验证。
-- **存储形态（关键裁决）**：开发/验收 = **SQLite**（modernc 纯 Go 驱动，`backend/data/mutag.db`，零外部依赖）+ 进程内 TTL 缓存；上线 = PG16+Redis7（`deploy/docker-compose.yml` 保留，切换点收敛在 `internal/db` 连接层 + 迁移方言文件）。**设计方案里的 Redis 限流/CDN 为 M2+ 上线项，M1 未实现。**
+- **存储形态（关键裁决）**：开发/验收 = **SQLite**（modernc 纯 Go 驱动，`backend/data/mutag.db`，零外部依赖）+ 进程内 TTL 缓存；上线 = PG17+Redis7（`deploy/docker-compose.yml` 保留，切换点收敛在 `internal/db` 连接层 + 迁移方言文件）。**设计方案里的 Redis 限流/CDN 为 M2+ 上线项，M1 未实现。**
 - **仓库实态**：GitHub 公开仓 `github.com/changzhi777/MuTag`（2026-11-16 首发 a/22e1ebb，M1-M4 单提交 104 文件）；`.gitignore` 含 .claude/.zcf/.spec-workflow/.pnpm-store/backend/server/*.tsbuildinfo；真实数据 xlsx 按用户裁决入库
 - `.spec-workflow/` 是 spec-workflow MCP 工具的模板目录，**不是项目模块**，勿当作代码阅读。
 
@@ -61,7 +61,7 @@ graph TD
 
     API["API 服务 🟢 Go 1.26 + Gin<br/>/t + /h5/t + /api/v1/assets + /healthz<br/>users/财务域 📋 M2/M4"]
 
-    DB[("存储 🟢 开发: SQLite<br/>📋 上线: PG16")]
+    DB[("存储 🟢 开发: SQLite<br/>📋 上线: PG17")]
     CACHE[("缓存 🟢 开发: 进程内 TTL<br/>📋 上线: Redis 7")]
     OSS["对象存储 📋（码图/导入导出）"]
 
