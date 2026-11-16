@@ -15,8 +15,8 @@ type UserRepo struct {
 // GetOrCreate openid 幂等建档（首登默认 staff）。
 func (r *UserRepo) GetOrCreate(ctx context.Context, openid, nick string) (*domain.User, error) {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO users (openid, nickname) VALUES (?, NULLIF(?, ''))
-		 ON CONFLICT(openid) DO NOTHING`, openid, nick)
+		`INSERT INTO users (openid, nickname, created_at) VALUES (?, NULLIF(?, ''), ?)
+		 ON CONFLICT(openid) DO NOTHING`, openid, nick, nowText())
 	if err != nil {
 		return nil, err
 	}
