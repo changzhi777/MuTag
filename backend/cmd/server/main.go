@@ -12,8 +12,8 @@ import (
 	"syscall"
 	"time"
 
-	// PG 上线形态：解除下行注释（需先 go get github.com/jackc/pgx/v5，注册 "pgx" driver）
-	// _ "github.com/jackc/pgx/v5/stdlib"
+	// PG 上线形态：blank-import 注册 "pgx" driver（SQLite 形态不触发连接）
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/gin-gonic/gin"
 

@@ -9,8 +9,8 @@ import (
 	"database/sql"
 	"log"
 
-	// PG 形态：解除下行注释（需先 go get github.com/jackc/pgx/v5，注册 "pgx" driver）
-	// _ "github.com/jackc/pgx/v5/stdlib"
+	// PG 形态：blank-import 注册 "pgx" driver
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"mutag/backend/internal/config"
 	"mutag/backend/internal/db"
