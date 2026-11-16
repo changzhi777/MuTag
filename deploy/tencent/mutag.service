@@ -1,0 +1,13 @@
+[Unit]
+Description=MuTag 活码服务
+After=network-online.target
+
+[Service]
+WorkingDirectory=/opt/mutag
+EnvironmentFile=/opt/mutag/mutag.env
+ExecStart=/opt/mutag/mutag
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
