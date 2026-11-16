@@ -58,11 +58,14 @@ func OpenSQLite(path string) (*sql.DB, error) {
 // OpenPostgres 打开 PG 连接（pgx + rebind 驱动包装）。
 // pgx 全链路（含 simple protocol）只认 $n 占位符；repo 层统一 ? 风格，
 // 故经 rebind_driver 包装层自动转换（? → $1..$n），双方言同一份 SQL。
+// DefaultQueryExecMode 强制 simple protocol：无 prepared statement——
+// transaction pooler（Supavisor 6543）下物理连接复用不会残留 42P05。
 func OpenPostgres(dsn string) (*sql.DB, error) {
 	cfg, err := pgx.ParseConfig(dsn)
 	if err != nil {
 		return nil, fmt.Errorf("parse pg dsn: %w", err)
 	}
+	cfg.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 	database := OpenWithRebind(stdlib.GetConnector(*cfg))
 	database.SetMaxOpenConns(10)
 
