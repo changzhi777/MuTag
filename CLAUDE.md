@@ -16,6 +16,7 @@
 | 2026-11-16 | V1.3 | 📱 **M2 主体落地（小程序闭环，真机联调留余）**：users 表（0002 迁移）+ 员工端登录（**dev 模式：WECHAT_APPID 未配时 openid=mock(code)，配凭证即切真 code2session**）+ 快捷操作四动作（领用/归还/报修/位置变更，写 event 纪律）+ 我的上报 + 扫码历史（本地缓存 100 条）+ 302 分流 WEAPP_JUMP_URL 可配；管理后台补**码版面打印**（前端 qrcode 生成活码 URL 码图 + A4 打印，M3 出口物理闭环）；e2e 扩至员工链路（dev 登录→四动作→我的上报）全绿 |
 | 2026-11-16 | V1.4 | 💰 **M4 落地（财务对接全链路）**：0003 迁移三表（fin_mappings / export_jobs / import_batches）；**内置四模板播种**（用友U8固定资产卡片/金蝶云星空/管家婆/通用台账，kind 幂等 + version 递增）；**映射层格式转换收敛**（金额两位小数/状态中文/日期格式全在模板 def）；导出 = 模板映射输出行 + 后端审计留痕（操作人+过滤条件，XLSX 仍由前端 SheetJS 生成——延续 M3 零新依赖裁决）；**导入两段式**（preview 落库 pending → SN 匹配差异比对（新增/更新/错误行标红）→ confirm 事务入库并回填明细 → rollback 事务反向恢复（新增删资产+码置 void，更新按 old 快照回写））；后台新增「财务对接」页三 Tab（财务导入/导出/模板配置）；e2e 财务链路五段全绿；AssetFilter 扩 dept/入账区间，List 支持全量不分页；GOCACHE 需指到可写目录（沙箱拒写 ~/Library/Caches） |
 | 2026-11-16 | V1.5 | 🛡️ **纪律 4 落地（扫码限流）+ 文档收尾**：进程内 IP 令牌桶（`internal/cache/limiter.go`，容量/速率 env 可配 `RATE_LIMIT_BURST=30`/`RATE_LIMIT_PER_SEC=5`，≤0 关闭），挂活码 302 + H5 双入口同桶，429 兜底；管理端 API 不受限流影响；单测 + e2e 限流专项全绿（Redis 替换点：仅换 limiter.go 实现，Allow 语义不变）；verify.sh 增至 15 连检（财务模板播种 + 导出审计）；PG 形态确认阻塞点：模块缓存无 pgx/lib-pq，上线需在线环境 `go mod tidy`；`.claude/index.json` 同步 v1.4.0 实态（规划态字段全量刷新，gaps 重排为验收/上线/提交三线） |
+| 2026-11-16 | V1.6 | 🚀 **发布 GitHub 公开仓**：`github.com/changzhi777/MuTag` 上线（用户裁决：公开 / xlsx 真实数据入库 / .claude 排除）；首次提交 `22e1ebb`（104 文件，M1-M4 全量），杂物预清（tsbuildinfo / backend/server 二进制 / .spec-workflow 模板入 .gitignore）；密钥预扫干净；沙箱内 gh 走 TLS MITM 不可用，建仓推送由用户终端执行（`gh repo create --public --source --push`）；远端 main = 本地 = 22e1ebb，工作区 clean |
 
 ---
 
@@ -23,7 +24,7 @@
 
 - **M1 已落地（2026-11-16）**：`backend/`（活码服务）+ `miniprogram/`（员工端两页）+ `deploy/`（验收）+ `README.md` 均已存在并可运行；出口标准「外部扫码看到资产页」已通过 `bash deploy/verify.sh` 七连检验证。
 - **存储形态（关键裁决）**：开发/验收 = **SQLite**（modernc 纯 Go 驱动，`backend/data/mutag.db`，零外部依赖）+ 进程内 TTL 缓存；上线 = PG16+Redis7（`deploy/docker-compose.yml` 保留，切换点收敛在 `internal/db` 连接层 + 迁移方言文件）。**设计方案里的 Redis 限流/CDN 为 M2+ 上线项，M1 未实现。**
-- **尚未 `git init`**：`.gitignore` 已就位（含 `backend/data/`、seed 生成物），首次提交前先 `git init -b main`。
+- **仓库实态**：GitHub 公开仓 `github.com/changzhi777/MuTag`（2026-11-16 首发 a/22e1ebb，M1-M4 单提交 104 文件）；`.gitignore` 含 .claude/.zcf/.spec-workflow/.pnpm-store/backend/server/*.tsbuildinfo；真实数据 xlsx 按用户裁决入库
 - `.spec-workflow/` 是 spec-workflow MCP 工具的模板目录，**不是项目模块**，勿当作代码阅读。
 
 ---
@@ -155,7 +156,7 @@ graph TD
 2. **M1 代码已存在**：`backend/`、`miniprogram/`、`deploy/`、`admin-web/` 均为实态，改代码前先读对应模块
 3. **构建环境特殊性**：本机沙箱代理拦截 Go proxy，离线构建用 `GOFLAGS="-mod=mod -buildvcs=false" GOPROXY=off GOSUMDB=off`（依赖走模块缓存）；在线环境正常 `go mod tidy`。本地端口绑定被沙箱禁，起服务/验收用 `!` 前缀在会话外跑（verify.sh）。
 4. **存储双形态**：改 SQL/存储层时注意 SQLite（开发）与 PG（上线）方言双轨，迁移文件按方言各自维护于 `internal/db/migrations/`。
-5. **尚未 git init**：首次提交前先 `git init -b main`（`.gitignore` 已就位）。
+5. **仓库已发布 GitHub**：`github.com/changzhi777/MuTag`（公开）；日常开发 commit + push 到 main；沙箱内 gh/git 走 TLS MITM 不可用，远端操作用 `!` 前缀在会话外跑
 6. `.spec-workflow/` 为 spec-workflow MCP 工具模板，仅用于规格流程，不是项目代码。
 
 ---
