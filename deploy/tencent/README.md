@@ -9,6 +9,7 @@
 微信/浏览器 ──HTTPS──> nginx :443 (certbot 托管 Let's Encrypt, 自动续期)
                         └─ proxy_pass ──> mutag :18000 (systemd, Supabase pooler 6543)
 活码 DNS: mutag.qingmulife.com A → 43.129.201.118 (TTL 600)
+跳转域名: mutag.qingmulife.cn A → 43.129.201.118（nginx 301 → mutag.qingmulife.com，certbot TLS）
 管理后台: https://mutag.qingmulife.com/admin/
 ```
 
