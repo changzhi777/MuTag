@@ -85,6 +85,7 @@ func NewRouter(d Deps) *gin.Engine {
 		authed.POST("/assets", d.createAsset)
 		authed.PUT("/assets/:tagID", d.updateAsset)
 		authed.GET("/tags", d.listTags)
+		authed.GET("/tags/scan-stats", d.scanStats)
 		authed.POST("/tags/:tagID/void", d.voidTag)
 		authed.POST("/import", d.importAssets)
 		authed.GET("/stats", d.stats)

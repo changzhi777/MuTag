@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Popconfirm, Select, Space, Table, Tag, message } from "antd";
+import { Popconfirm, Select, Space, Table, Tag, Typography, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { api, post } from "../api/client";
 import type { Tag as TagEntity } from "../types";
@@ -15,6 +15,7 @@ export default function Codes() {
   const [size, setSize] = useState(20);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [scanStats, setScanStats] = useState<Record<string, { count: number; last: string }>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -25,6 +26,12 @@ export default function Codes() {
       const res = await api<{ total: number; items: TagEntity[] }>(`/tags?${qs}`);
       setItems(res.items);
       setTotal(res.total);
+      try {
+        const st = await api<{ items: { tag_id: string; count: number; last: string }[] }>("/tags/scan-stats");
+        const m: Record<string, { count: number; last: string }> = {};
+        for (const it of st.items) m[it.tag_id] = { count: it.count, last: it.last };
+        setScanStats(m);
+      } catch { /* 统计失败不阻断主列表 */ }
     } catch (e) {
       message.error((e as Error).message);
     } finally {
@@ -48,6 +55,15 @@ export default function Codes() {
     { title: "码号", dataIndex: "tag_id", width: 150, render: (v: string) => <code>{v}</code> },
     { title: "scene", dataIndex: "qr_scene", width: 180, render: (v) => v || "-" },
     { title: "活码路径", dataIndex: "url_code", width: 160 },
+    {
+      title: "扫码统计", width: 150,
+      render: (_: unknown, record: TagEntity) => {
+        const st = scanStats[record.tag_id];
+        return st ? (
+          <span>扫码 {st.count} 次<br /><Typography.Text type="secondary" style={{ fontSize: 11 }}>{new Date(st.last).toLocaleString("zh-CN", { hour12: false })}</Typography.Text></span>
+        ) : <Typography.Text type="secondary">-</Typography.Text>;
+      }
+    },
     {
       title: "状态", dataIndex: "status", width: 90,
       render: (s: string) =>

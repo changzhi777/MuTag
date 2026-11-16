@@ -549,3 +549,33 @@ func TestE2ERateLimit(t *testing.T) {
 		t.Fatalf("管理端不应被限流, got %d", w.Code)
 	}
 }
+
+// 码扫码统计：scan_logs 有数据的码返回次数与最近扫码
+func TestE2EScanStats(t *testing.T) {
+	gr := newTestRouter(t)
+	// 扫码两次（不同码号）
+	gr.do(t, http.MethodGet, "/t/MT-2026-000001", "")
+	gr.do(t, http.MethodGet, "/t/MT-2026-000001", "")
+	gr.do(t, http.MethodGet, "/t/MT-2026-000002", "")
+	w := gr.do(t, http.MethodGet, "/api/admin/tags/scan-stats", "")
+	var body struct {
+		Items []struct {
+			TagID string `json:"tag_id"`
+			Count int64  `json:"count"`
+			Last  string `json:"last"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil || len(body.Items) < 2 {
+		t.Fatalf("code=%d body=%s", w.Code, w.Body.String())
+	}
+	byTag := map[string]int64{}
+	for _, it := range body.Items {
+		byTag[it.TagID] = it.Count
+		if it.Last == "" {
+			t.Fatalf("last 为空: %+v", it)
+		}
+	}
+	if byTag["MT-2026-000001"] != 2 || byTag["MT-2026-000002"] != 1 {
+		t.Fatalf("扫码计数不符: %+v", byTag)
+	}
+}

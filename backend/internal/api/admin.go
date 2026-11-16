@@ -307,8 +307,7 @@ func (d Deps) importAssets(c *gin.Context) {
 }
 
 // stats GET /api/admin/stats —— 状态分布 + 总数。
-func (d Deps) stats(c *gin.Context) {
-	rows, err := d.Store.DB.QueryContext(c.Request.Context(),
+func (d Deps) stats(c *gin.Context) {	rows, err := d.Store.DB.QueryContext(c.Request.Context(),
 		`SELECT status, count(*) FROM assets GROUP BY status`)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
@@ -345,4 +344,28 @@ func noteOf(changed map[string]any) *string {
 	}
 	note := "变更字段：" + strings.Join(keys, "、")
 	return &note
+}
+
+// scanStats GET /api/admin/tags/scan-stats —— 码扫码统计（全量：次数 + 最近扫码时间）。
+// 码版面/码管理页展示用；scan_logs 体量小（内网资产系统），全量聚合一次返回。
+func (d Deps) scanStats(c *gin.Context) {
+	rows, err := d.Store.DB.QueryContext(c.Request.Context(),
+		`SELECT tag_id, count(*), max(created_at) FROM scan_logs GROUP BY tag_id`)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+
+	stats := []gin.H{}
+	for rows.Next() {
+		var tagID, last string
+		var count int64
+		if err := rows.Scan(&tagID, &count, &last); err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		stats = append(stats, gin.H{"tag_id": tagID, "count": count, "last": last})
+	}
+	c.JSON(200, gin.H{"items": stats})
 }
