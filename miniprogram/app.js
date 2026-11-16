@@ -9,7 +9,7 @@ function resolveApiBase() {
   } catch (e) {
     // 低版本基础库无 getAccountInfoSync：按开发环境处理
   }
-  if (envVersion === "release") return "https://mutag.qingmulife.com";
+  if (envVersion === "release" || envVersion === "trial") return "https://mutag.qingmulife.com";
   return "http://localhost:8080";
 }
 
