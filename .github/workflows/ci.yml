@@ -1,0 +1,47 @@
+# MuTag CI：backend（Go 全量测试）+ admin-web（tsc+vite 构建）双 job，push/PR 双触发。
+# 存储形态：SQLite（零外部依赖，测试免服务容器）。
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    name: backend (go test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: Build
+        run: go build ./...
+      - name: Test（含进程内 e2e 全链：活码/员工端/财务/网格/限流）
+        run: go test ./... -v -count=1
+
+  admin-web:
+    name: admin-web (tsc + vite build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: admin-web/pnpm-lock.yaml
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm build
