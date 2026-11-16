@@ -38,6 +38,15 @@ GOFLAGS="-mod=mod -buildvcs=false" go build -ldflags "-s -w" -o /opt/mutag/mutag
 systemctl restart mutag
 ```
 
+## 数据备份（Supabase 免费层无自动备份，自建每日 cron）
+
+- 脚本：`/opt/mutag/backup.sh`（root 700）——PG17 pg_dump **直连** Supabase（db.<ref>.supabase.co:5432，
+  非 pooler：pg_dump 需要会话语义）→ `/opt/mutag/backups/mutag-YYYYMMDD-HHMM.dump`（custom 格式），保留 14 份
+- cron：`0 3 * * * /opt/mutag/backup.sh >> /opt/mutag/backups/backup.log 2>&1`
+- ⚠️ **pg_dump 版本必须 ≥ 服务器版本**（Debian 自带 15.x 无法 dump PG17，需 PGDG 仓库装 `postgresql-client-17`：
+  `/usr/lib/postgresql/17/bin/pg_dump`——2026-11-17 首次备份踩坑实录）
+- 恢复：`pg_restore -d <DSN> --clean <dump 文件>`
+
 ## 首次部署实录（2026-11-17）与排障记录
 
 1. **盘满**：根分区 100%（69G）——`/var/lib/docker` 40G，107 镜像 90% 孤儿。
