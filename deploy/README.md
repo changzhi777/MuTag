@@ -12,7 +12,9 @@
 
 **形态选择只需一个变量**：`DATABASE_URL` 有值 → PG（Supabase/自建）；空 → SQLite。
 
-## Supabase 接入（上线推荐）
+## Supabase 接入（上线推荐，已实证 ✅ 2026-11-17）
+
+全套 e2e（8 组含财务/网格/限流链路）已在 Supabase PG17 真实跑绿；期间落地的适配：占位符 rebind 驱动包装（`?`→`$n`）、simple protocol（免疫 transaction pooler 的 42P05）、`RETURNING` 替代 LastInsertId、全表 INSERT 显式时间戳。
 
 1. supabase.com → New Project（区域 Singapore，免费层 500MB 够 MuTag 量级）
 2. Project Settings → Database → Connection string → **Session pooler**（5432，事务语义最稳）
