@@ -83,6 +83,13 @@ systemctl restart mutag
 8. **登录失效**：ADMIN_PASSWORD 生成链路（base64|tr 管道）曾引入不可见字符——重设为可读强密码；
    排障三板斧：`cat mutag.env` → `cat /proc/<MainPID>/environ`（进程真实值）→ 本机 curl login
 
+## 广州 106 运维附录：服务端活码 QR 端点（2026-11-17 上线）
+
+- **端点**：`GET/HEAD /qr/:urlCode?size=512`——服务端渲染活码 URL（`BASE_URL/t/{urlCode}`）PNG 码图；公开 + rateLimit 同桶 + active 码 Cache-Control 86400；void/不存在 → 404（与分流语义一致）
+- **实现**：`internal/qr` 薄封装 skip2/go-qrcode（MIT，`v0.0.0-20200617195104-da1b6568686e`，尺寸 clamp 64~1024）；e2e `TestE2EQRCode` 七断言
+- **106 部署链特殊处理**：`skip2` 无 git tag → 手写 go.mod 版本易错（pseudo-version 必须从 `goproxy.cn/.../@latest` 取真值）；alpine 容器缺 git 使 tidy 回源卡死 → **用 `docker.1ms.run/golang:1.26`（Debian 自带 git）跑 `go mod tidy`** 生成 go.sum；sed 替换 go.mod 版本注意 `[a-z0-9]*` 不匹配连字符（贪婪 `.*` 才安全）
+- **106 工作区 go.sum 为权威**（BUILD-OK + e2e PASS 实证）；仓库 go.sum 待本地网络可用时补交
+
 ## 广州 106 运维附录：Portainer 可视化容器管理（2026-11-17 上线）
 
 - **入口**：https://ser.qingmulife.cn/docker/（中文界面，admin 账号，密码见 106 `/opt/portainer/admin-credentials.txt`）
