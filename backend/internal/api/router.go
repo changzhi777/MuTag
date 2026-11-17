@@ -57,6 +57,10 @@ func NewRouter(d Deps) *gin.Engine {
 	r.GET("/healthz", health(d))
 	r.HEAD("/healthz", health(d))
 
+	// 根路径落地页 + NoRoute 友好兜底（API 路径保持 JSON 语义）
+	r.GET("/", d.H5.HomeHandler())
+	r.NoRoute(d.H5.NotFoundHandler())
+
 	// 活码分流器：码不变，目标可换（HEAD 兼容扫码枪探测）；限流防爬（纪律 4）
 	r.GET("/t/:urlCode", rateLimit(d.Limiter), resolve(d))
 	r.HEAD("/t/:urlCode", rateLimit(d.Limiter), resolve(d))

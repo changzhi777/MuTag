@@ -72,6 +72,29 @@ func (r *Renderer) DetailHandler(tags *repo.TagRepo, assets *repo.AssetRepo, eve
 	}
 }
 
+// HomeHandler GET / —— 根路径落地页（品牌 + 后台入口 + 员工扫码提示）。
+func (r *Renderer) HomeHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		mustServe(c, http.StatusOK)
+		_ = r.tpl.ExecuteTemplate(c.Writer, "home.html", nil)
+	}
+}
+
+// NotFoundHandler NoRoute 兜底：API 路径保持 JSON 语义，其余返回 HTML「页面不存在」页。
+func (r *Renderer) NotFoundHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			return
+		}
+		mustServe(c, http.StatusNotFound)
+		_ = r.tpl.ExecuteTemplate(c.Writer, "notfound.html", map[string]any{
+			"Title": "页面不存在",
+			"Desc":  "您访问的页面不存在或已被移除",
+		})
+	}
+}
+
 // Renderer H5 渲染器（模板 + 设计系统 FuncMap）。
 type Renderer struct {
 	tpl *template.Template

@@ -1,0 +1,52 @@
+{{/* 落地页：根路径 / 入口引导（品牌 + 后台入口 + 员工扫码提示） */}}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>MuTag · 青沐动态码</title>
+<style>{{template "style"}}</style>
+<style>
+.home{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
+padding:32px var(--sp-4) calc(32px + env(safe-area-inset-bottom))}
+.home h1{font-size:20px;line-height:28px;font-weight:600;margin-top:var(--sp-5)}
+.home>p{font-size:14px;line-height:22px;color:var(--ink-500);max-width:280px;margin-top:var(--sp-2)}
+.home__links{margin-top:var(--sp-6);display:flex;gap:var(--sp-3)}
+.home__links a{display:inline-flex;align-items:center;padding:10px 24px;border-radius:10px;
+background:var(--brand-600);color:#fff;text-decoration:none;
+font:600 15px/22px -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+.home__links a:active{background:var(--brand-700)}
+.home__tip{margin-top:var(--sp-4);font-size:12px;line-height:18px;color:var(--ink-500)}
+</style>
+</head>
+<body>
+<div class="home">
+  <svg width="88" height="88" viewBox="0 0 72 72" fill="none" aria-hidden="true">
+    <g stroke="#0D9488" stroke-width="3" fill="none">
+      <rect x="8" y="8" width="20" height="20" rx="3"/>
+      <rect x="44" y="8" width="20" height="20" rx="3"/>
+      <rect x="8" y="44" width="20" height="20" rx="3"/>
+    </g>
+    <g fill="#0D9488">
+      <rect x="13" y="13" width="10" height="10" rx="1"/>
+      <rect x="49" y="13" width="10" height="10" rx="1"/>
+      <rect x="13" y="49" width="10" height="10" rx="1"/>
+    </g>
+    <g fill="#0F766E">
+      <rect x="46" y="46" width="6" height="6" rx="1"/>
+      <rect x="56" y="46" width="6" height="6" rx="1"/>
+      <rect x="46" y="56" width="6" height="6" rx="1"/>
+      <rect x="56" y="56" width="6" height="6" rx="1"/>
+    </g>
+  </svg>
+  <h1>MuTag 动态码</h1>
+  <p>码不变，内容随时改——扫码即见资产全生命周期</p>
+  <div class="home__links">
+    <a href="/admin">管理后台</a>
+  </div>
+  <p class="home__tip">员工请用微信扫描资产二维码直达详情页</p>
+  {{template "foot"}}
+</div>
+</body>
+</html>

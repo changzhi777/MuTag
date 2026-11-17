@@ -60,6 +60,17 @@ func TestRenderTemplates(t *testing.T) {
 	if !strings.Contains(buf.String(), "二维码无效") {
 		t.Error("notfound.html 缺少标题")
 	}
+
+	buf.Reset()
+	if err := r.tpl.ExecuteTemplate(&buf, "home.html", nil); err != nil {
+		t.Fatalf("render home.html: %v", err)
+	}
+	out = buf.String()
+	for _, want := range []string{"MuTag 动态码", "管理后台", "/admin"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("home.html 缺少 %q", want)
+		}
+	}
 }
 
 func ptr(s string) *string { return &s }
