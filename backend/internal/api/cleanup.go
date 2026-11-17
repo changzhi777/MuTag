@@ -127,10 +127,15 @@ func (d Deps) cleanupScan(c *gin.Context) {
 		}
 		// 时间簇：created_at 逐分钟归桶
 		g.Clusters = timeClusters(g.Members)
-		// 保留策略（manual 交前端，后端按 earliest_1 预排；keep 列照标，前端可改）
+		// 合法 qty 拆分保护：单簇（同次导入聚簇）且无权威文件对齐 = xlsx 数量语义，整组不清理。
+		// 跨簇（多次导入叠加）才进重复列表；align 模式有目标 N 不受此限。
+		if g.Clusters == 1 && req.Mode == "all" {
+			continue
+		}
+		// 保留策略：all 模式每组保留最早 1 条；align 模式保留至期望条数
 		keepN := 1
 		if req.Mode == "align" && g.Expected > 0 {
-			keepN = g.Expected // 对齐模式保留至期望条数
+			keepN = g.Expected
 		}
 		if req.KeepStrategy == "latest_1" {
 			latest := g.Members

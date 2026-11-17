@@ -39,11 +39,22 @@ type execResp struct {
 func TestE2ECleanupChain(t *testing.T) {
 	gr := newTestRouter(t)
 
-	// seed：A×3（垃圾导入）+ B×2；给 A 的一条追加业务履历（→ 应预标 void 而非 delete）
-	seed := `{"items":[{"seq":"1","name":"清洗测试A","buy_date":"2026-08-01","qty":3,"unit":null,"keeper":null},
-{"seq":"2","name":"清洗测试B","buy_date":"2026-08-02","qty":2,"unit":null,"keeper":null}]}`
-	if w := gr.do(t, http.MethodPost, "/api/admin/import", seed); w.Code != http.StatusOK {
+	// seed：A 跨两簇（首簇 1 条 + 次簇 force 2 条）——同簇数=1 的合法 qty 拆分不进重复列表；
+	// B 单件单簇。给 A 的一条追加业务履历（→ 应预标 void 而非 delete）
+	seed := `{"items":[{"seq":"1","name":"清洗测试A","buy_date":"2026-08-01","qty":1,"unit":null,"keeper":null},
+{"seq":"2","name":"清洗测试B","buy_date":"2026-08-02","qty":1,"unit":null,"keeper":null}]}`
+	w := gr.do(t, http.MethodPost, "/api/admin/import", seed)
+	if w.Code != http.StatusOK {
 		t.Fatalf("seed 导入失败: %d %s", w.Code, w.Body.String())
+	}
+	// 首批 A 拨到昨天（造跨簇），再 force 导入 A×2 到今天
+	if _, err := gr.deps.Store.DB.Exec(
+		`UPDATE assets SET created_at='2026-11-16T10:00:00Z' WHERE name='清洗测试A'`); err != nil {
+		t.Fatalf("拨时间: %v", err)
+	}
+	seed2 := `{"items":[{"seq":"1","name":"清洗测试A","buy_date":"2026-08-01","qty":2,"unit":null,"keeper":null}],"dedup":false}`
+	if w := gr.do(t, http.MethodPost, "/api/admin/import", seed2); w.Code != http.StatusOK {
+		t.Fatalf("seed2 导入失败: %d %s", w.Code, w.Body.String())
 	}
 	// A 组 tag 列表（按导入顺序 3 条）与追加履历
 	var seeded struct {
@@ -53,12 +64,18 @@ func TestE2ECleanupChain(t *testing.T) {
 		} `json:"items"`
 		Total int `json:"total"`
 	}
-	w := gr.do(t, http.MethodGet, "/api/admin/assets?page=1&size=50&keyword=清洗测试", "")
+	w = gr.do(t, http.MethodGet, "/api/admin/assets?page=1&size=50", "")
 	if err := json.Unmarshal(w.Body.Bytes(), &seeded); err != nil {
 		t.Fatalf("seed 读取: %v", err)
 	}
-	if seeded.Total != 5 {
-		t.Fatalf("seed 应 5 条，got %d", seeded.Total)
+	// 按键计数断言（库里含 newTestDeps 预置资产，total 不稳定）
+	aCnt, bCnt := 0, 0
+	for _, it := range seeded.Items {
+		if it.Name == "清洗测试A" { aCnt++ }
+		if it.Name == "清洗测试B" { bCnt++ }
+	}
+	if aCnt != 3 || bCnt != 1 {
+		t.Fatalf("A 应 3 条 B 应 1 条，got A=%d B=%d", aCnt, bCnt)
 	}
 	var aTags []string
 	var aFirst string // 给它追加履历（sort 后最早的保留——append 履历到任一条，验证 action=void 预标）
@@ -91,8 +108,8 @@ func TestE2ECleanupChain(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &sc); err != nil {
 		t.Fatalf("scan 解析: %v", err)
 	}
-	if len(sc.Groups) != 2 {
-		t.Fatalf("应 2 重复组，got %d", len(sc.Groups))
+	if len(sc.Groups) != 1 {
+		t.Fatalf("应 1 重复组（A 跨簇；B 单件单簇合法），got %d", len(sc.Groups))
 	}
 	var deleteIDs, voidIDs []string
 	for _, g := range sc.Groups {
