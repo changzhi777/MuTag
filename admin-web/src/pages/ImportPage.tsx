@@ -7,10 +7,15 @@ import { post } from "../api/client";
 import type { ImportItem } from "../types";
 
 // xlsx 列头 → 标准字段（与 seed 链路同构：序号/名称/采购日期/数量/单位/领用人签字）
+// 列头行自动定位：兼容模板首行为「固定资产需打标签」大标题（sheet_to_json 默认取首行当列头会全空）
 function parseWorkbook(file: ArrayBuffer): ImportItem[] {
   const wb = XLSX.read(file, { cellDates: true });
   const sheet = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+  const aoa = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: "" });
+  const headIdx = aoa.findIndex((r) => r.some((c) => String(c).trim() === "名称"));
+  if (headIdx === -1) return []; // 找不到「名称」列头 → 视为无效模板
+  const head: string[] = (aoa[headIdx] as unknown[]).map((c) => String(c).trim());
+  const val = (r: unknown[], name: string): unknown => r[head.indexOf(name)];
 
   const fmtDate = (v: unknown): string | null => {
     if (v instanceof Date) {
@@ -22,15 +27,16 @@ function parseWorkbook(file: ArrayBuffer): ImportItem[] {
     return s || null;
   };
 
-  return rows
-    .filter((r) => String(r["名称"] ?? "").trim() !== "")
+  return aoa
+    .slice(headIdx + 1)
+    .filter((r) => String(val(r, "名称") ?? "").trim() !== "")
     .map((r) => ({
-      seq: String(r["序号"] ?? "").trim(),
-      name: String(r["名称"]).trim(),
-      buy_date: fmtDate(r["采购日期"]),
-      qty: Math.max(parseInt(String(r["数量"] ?? "1"), 10) || 1, 1),
-      unit: String(r["单位"] ?? "").trim() || null,
-      keeper: String(r["领用人签字"] ?? "").trim() || null
+      seq: String(val(r, "序号") ?? "").trim(),
+      name: String(val(r, "名称")).trim(),
+      buy_date: fmtDate(val(r, "采购日期")),
+      qty: Math.max(parseInt(String(val(r, "数量") ?? "1"), 10) || 1, 1),
+      unit: String(val(r, "单位") ?? "").trim() || null,
+      keeper: String(val(r, "领用人签字") ?? "").trim() || null
     }));
 }
 
