@@ -1,19 +1,31 @@
-# MuTag 腾讯云生产部署（43.129.201.118 · Lighthouse 香港 lhins-42zqxraf）
+# MuTag 腾讯云部署（双机拓扑 · 2026-11-17 生产入口迁至广州 106）
 
-> 首次上线：2026-11-17 · 形态：Supabase PG17 + 单二进制 + systemd + nginx TLS
-> 实例名：MuTag（轻量控制台可改）· Debian · 2核4G · /dev/vda1 69G
+> 首次上线：2026-11-17（香港 118 · systemd）→ **生产入口迁移：2026-11-17 广州 106（Docker，用户裁定）**
+> 当前活码主入口：**https://mutag.qingmulife.cn → 广州 106.53.168.73**；香港 118 同库待机（systemd 二进制形态）
 
-## 拓扑
+## 当前生产拓扑（广州 106 · VM-0-12-debian · 4核8G Lighthouse lhins-c285olfp）
 
 ```
-微信/浏览器 ──HTTPS──> nginx :443 (certbot 托管 Let's Encrypt, 自动续期)
-                        └─ proxy_pass ──> mutag :18000 (systemd, Supabase pooler 6543)
-活码 DNS: mutag.qingmulife.com A → 43.129.201.118 (TTL 600)
-跳转域名: mutag.qingmulife.cn A → 43.129.201.118（nginx 301 → mutag.qingmulife.com，certbot TLS）
-管理后台: https://mutag.qingmulife.com/admin/
+DNS: mutag.qingmulife.cn A → 106.53.168.73（TTL 600，DNSPod 权威 subway/amelia 双 NS 已验证）
+浏览器/微信 ──HTTPS──> nginx :443 (certbot 托管, /etc/nginx/sites-enabled/mutag.conf)
+                      └─ proxy_pass ──> Docker mutag :127.0.0.1:18000→8080
+存储：Supabase PG17（session pooler aws-0-ap-southeast-2.pooler.supabase.com:5432 IPv4 + simple protocol）
+管理后台: https://mutag.qingmulife.cn/admin/（ADMIN_PASSWORD 见 /opt/mutag/mutag.env）
 ```
 
-## 目录（统一保存裁决）
+- 目录：`/opt/mutag/`（mutag.env 600 · src = github.com/changzhi777/MuTag clone · data/）
+- 镜像构建：`cd /opt/mutag/src && docker build -f backend/Dockerfile -t mutag:latest backend`
+- 容器重建（⚠️ `docker restart` 不重读 --env-file，改 env 必须 rm + run）：
+  `docker rm -f mutag && docker run -d --name mutag --restart always -p 127.0.0.1:18000:8080 -v /opt/mutag/data:/app/data -e SQLITE_PATH=/app/data/mutag.db --env-file /opt/mutag/mutag.env mutag:latest`
+- nginx conf 归档：[mutag-gz106.nginx.conf](./mutag-gz106.nginx.conf)（与线上一致）
+
+## 香港待机（118 · lhins-42zqxraf · systemd 二进制形态 · 2026-11-17 已停）
+
+**mutag 服务已 stop + disable**（用户裁定；`inactive/disabled`、18000 已释放）——二进制/env/unit/nginx conf 全部保留在位，回滚一条命令：`systemctl enable --now mutag`。
+BASE_URL 亦为 .cn；nginx `.cn` conf 见 [mutag-cn.nginx.conf](./mutag-cn.nginx.conf)（DNS 已不指向 118）。
+更新发布（118）：`ssh mutag` 或 OrcaTerm → `cd /opt/mutag/src && git pull && cd backend && GOFLAGS="-mod=mod -buildvcs=false" go build -ldflags "-s -w" -o /opt/mutag/mutag ./cmd/server && systemctl restart mutag`
+
+## 目录（香港 118 · 统一保存裁决）
 
 ```
 /opt/mutag/
@@ -32,7 +44,7 @@
 - `mutag.service` / `mutag.nginx.conf`：与本目录同名文件一一对应，重装时直接覆盖回位
 - 证书续期：certbot timer 自动（`certbot renew`）
 
-## 更新发布流程
+## 更新发布流程（香港 118）
 
 ```bash
 ssh mutag   # 或 OrcaTerm（SSH 被 Clash TUN 掐时的通道）
@@ -70,3 +82,30 @@ systemctl restart mutag
    备份 pg_dump 亦走直连（且 pg_dump 版本必须 ≥ 服务器版本）；simple protocol 仍保留（免疫其余 pooler 场景）
 8. **登录失效**：ADMIN_PASSWORD 生成链路（base64|tr 管道）曾引入不可见字符——重设为可读强密码；
    排障三板斧：`cat mutag.env` → `cat /proc/<MainPID>/environ`（进程真实值）→ 本机 curl login
+
+## 广州 106 运维附录：Portainer 可视化容器管理（2026-11-17 上线）
+
+- **入口**：https://ser.qingmulife.cn/docker/（中文界面，admin 账号，密码见 106 `/opt/portainer/admin-credentials.txt`）
+- **镜像**：`6053537/portainer-ce:2.45.2`（eysp 汉化版，对应上游 CE 2.45.2 LTS；勿用 latest——停在旧版）；经 `docker.1ms.run` 通道拉取
+- **容器**：`portainer`，`-p 127.0.0.1:19000:9000`（仅回环）+ docker.sock + `/opt/portainer/data:/data` + `--base-url /docker`
+- **admin 初始化**：`--admin-password-file /adminpw`（挂 `/opt/portainer/adminpw.txt` 单行密码，600）——⚠️ 实测 2.45.2 的 setup_token API（`X-Setup-Token` 头）无法生效（403 missing），`--admin-password-file` 为可靠通道；setup 窗口 5 分钟超时后全局 307 `timeout.html`，需 `docker restart portainer` 重开
+- **nginx**（`qm-ser.conf`，备份 `qm-ser.bak.portainer`）：`location = /docker` 301 补斜杠 + `location /docker/` → `proxy_pass http://127.0.0.1:19000/`（**尾斜杠剥前缀**——官方 --base-url 语义）+ WebSocket 头（Upgrade/Connection upgrade）+ 3600s 读写超时；锚点插在 `location /docs/` 之前（sed 标记行 + r 命令注入，无转义风险）
+- **验证**：公网登录 → 环境向导 → local（Standalone 29.8.0）→ 容器列表 13/13 运行中（中文 UI 全量生效）
+
+## 广州 106 上线实录（2026-11-17 · 生产入口迁移）
+
+1. **DNSPod 坑：单条「添加记录」UI 不推权威**——控制台显示「开启」但权威 NS（subway/amelia）返回
+   NXDOMAIN，等 10 分钟无效；**批量操作通道（txt 文件导入 / 批量修改）秒推权威**。复用通道：
+   批量操作 → 修改记录 → 指定域名 + 主机记录筛选 → 勾选 → 填新记录值 → 批量修改（操作确认弹窗）
+2. **IPv6-only 直连**：106 无 IPv6 出口，`db.<ref>.supabase.co:5432` 解析为 IPv6 → `network is
+   unreachable` crash 循环；106 正解 = **session pooler :5432（IPv4）+ simple protocol**（5432 会话
+   粘滞无 42P05 风险；6543 transaction pooler 才有）。118 能直连因其解析到 IPv4——两机连接形态
+   不必强求一致
+3. **sed 子串坑**：`s|BASE_URL=.*|...|` 会误命中 `DATABASE_URL=`（DA**BASE_URL=**）行——多行 env
+   改写务必行首锚定 `^KEY=`
+4. **admin assets 404 假象**：`curl -sI`（HEAD）打 `/admin/assets/*.js` 404——路由只注册了
+   `r.GET`，HEAD 无路由；`curl -s`（GET）实为 200。浏览器白屏实为旧镜像（dist/assets 入库前
+   构建，embed 缺 assets）+ 当日直连 DSN crash 循环叠加；用当前 main 重建镜像即愈：
+   `docker build -f backend/Dockerfile -t mutag:latest backend`
+5. **certbot**：`certbot --nginx -d mutag.qingmulife.cn -n` 自动改写 conf（443 + 80→301），
+   服务器已有账户无需 -m；验证 `curl -s https://mutag.qingmulife.cn/healthz`

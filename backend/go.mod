@@ -5,6 +5,7 @@ go 1.26.2
 require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/jackc/pgx/v5 v5.13.0
+	github.com/skip2/go-qrcode v0.0.0-20200617153809-6e1b8f1e2f09
 	modernc.org/sqlite v1.60.1
 )
 

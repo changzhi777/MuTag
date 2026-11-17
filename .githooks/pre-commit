@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# 提交前自动归档根目录散落的截图/快照（scripts/tidy_artifacts.sh）
+"$(git rev-parse --show-toplevel)/scripts/tidy_artifacts.sh" --quiet

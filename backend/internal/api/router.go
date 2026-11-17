@@ -64,6 +64,10 @@ func NewRouter(d Deps) *gin.Engine {
 	// H5 只读详情页（同一限流桶——爬虫可绕过 302 直打 H5）
 	r.GET("/h5/t/:tagID", rateLimit(d.Limiter), d.H5.DetailHandler(d.Store.Tags(), d.Store.Assets(), d.Store.Events()))
 
+	// 活码 QR 图端点：服务端渲染活码 URL 的 PNG（公开 + 限流 + HEAD 兼容）
+	r.GET("/qr/:urlCode", rateLimit(d.Limiter), d.qrPNG)
+	r.HEAD("/qr/:urlCode", rateLimit(d.Limiter), d.qrPNG)
+
 	// JSON API（小程序数据源）
 	r.GET("/api/v1/assets/:tagID", assetDetail(d))
 
