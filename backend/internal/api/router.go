@@ -99,6 +99,15 @@ func NewRouter(d Deps) *gin.Engine {
 		authed.POST("/tags/:tagID/void", d.voidTag)
 		authed.POST("/import", d.importAssets)
 		authed.POST("/import/precheck", d.importPrecheck)
+
+		// P2 存量重复清洗（规划：.claude/plan/db-import-clean-dedupe.md 阶段 3）
+		cleanup := authed.Group("/cleanup")
+		{
+			cleanup.POST("/scan", d.cleanupScan)
+			cleanup.POST("/execute", d.cleanupExecute)
+			cleanup.GET("/jobs", d.cleanupJobs)
+			cleanup.POST("/jobs/:jobID/restore", d.cleanupRestore)
+		}
 		authed.GET("/stats", d.stats)
 
 		// M4 财务对接：模板 / 导出审计 / 导入预览确认回滚

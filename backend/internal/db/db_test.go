@@ -22,8 +22,8 @@ func TestSelectUpMigrationsByDialect(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(sqliteUps) != 3 || len(pgUps) != 3 {
-		t.Fatalf("各方言应各 3 个迁移: sqlite=%d pg=%d", len(sqliteUps), len(pgUps))
+	if len(sqliteUps) != 4 || len(pgUps) != 4 {
+		t.Fatalf("各方言应各 4 个迁移: sqlite=%d pg=%d", len(sqliteUps), len(pgUps))
 	}
 	for _, n := range pgUps {
 		if !strings.Contains(n, ".pg.") {
