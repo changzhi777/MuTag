@@ -19,7 +19,7 @@ const STATUS_OPTIONS = [
 
 // 标签模板规格：A4 210×297mm，页边距 10mm；每枚含 QR + 文本区
 const TEMPLATES = [
-  { key: "30x30", label: "30×30mm（6列×9行）", tw: 30, th: 30, cols: 6, rows: 9, qrmm: 22 },
+  { key: "30x30", label: "30×30mm（6列×8行）", tw: 30, th: 30, cols: 6, rows: 8, qrmm: 22 },
   { key: "40x30", label: "40×30mm（4列×8行）", tw: 40, th: 30, cols: 4, rows: 8, qrmm: 24 },
   { key: "50x50", label: "50×50mm（3列×5行）", tw: 50, th: 50, cols: 3, rows: 5, qrmm: 38 },
   { key: "60x40", label: "60×40mm（3列×6行）", tw: 60, th: 40, cols: 3, rows: 6, qrmm: 30 }
@@ -112,7 +112,11 @@ export default function PrintPage() {
   const [style, setStyle] = useState<QrStyle>(loadStyle);
   const [ziping, setZiping] = useState(false);
   const [liveBase, setLiveBase] = useState(window.location.origin); // 服务端 BASE_URL 下发（fallback origin）
+  const [statusFilter, setStatusFilter] = useState(""); // 客户端状态筛选（假控件修复：onChange 真正生效）
   const gridRef = useRef<HTMLDivElement>(null);
+  const vpRef = useRef<HTMLDivElement>(null); // 预览视口（缩放包裹层）
+  const [fit, setFit] = useState(1); // A4 预览缩放比（容器宽/794px，封顶 1）
+  const naturalH = useRef(1123); // sheet 未缩放总高（px，实测刷新）
 
   const tpl = TEMPLATES.find((t) => t.key === tplKey) || TEMPLATES[1];
 
@@ -150,12 +154,32 @@ export default function PrintPage() {
   }, [reload]);
 
   const chosen = useMemo(() => assets.filter((a) => selected.has(a.tag_id)), [assets, selected]);
+  const shown = useMemo(
+    () => (statusFilter ? assets.filter((a) => a.status === statusFilter) : assets),
+    [assets, statusFilter]
+  );
   const pages = useMemo(() => {
     const per = tpl.cols * tpl.rows;
     const out: Asset[][] = [];
     for (let i = 0; i < chosen.length; i += per) out.push(chosen.slice(i, i + per));
     return out.length ? out : [[]];
   }, [chosen, tpl]);
+
+  // 预览缩放：A4 物理宽 210mm≈794px，右列放不下 → transform scale 等比适配（封顶 1 不放大）
+  useEffect(() => {
+    const vp = vpRef.current;
+    if (!vp) return;
+    const measure = () => {
+      const sheet = gridRef.current;
+      if (sheet) naturalH.current = sheet.offsetHeight; // offsetHeight 不受 transform 影响
+      setFit(Math.min(1, vp.clientWidth / 794));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(vp);
+    if (gridRef.current) ro.observe(gridRef.current);
+    return () => ro.disconnect();
+  }, [chosen.length, tplKey]);
 
   // 单枚标签容器：挂载 qr-code-styling SVG（样式/资产变化即重渲）
   const downloadOne = async (asset: Asset, fmt: "png" | "svg") => {
@@ -298,6 +322,12 @@ export default function PrintPage() {
         .mt-t-code { font-family: monospace; font-size: 8pt; letter-spacing: 0.5px; }
         .mt-t-line { font-size: 7.5pt; color: #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .mt-page { display: grid; grid-template-columns: repeat(${tpl.cols}, ${tpl.tw}mm); grid-auto-rows: ${tpl.th}mm; gap: 2mm; padding: 10mm; }
+        .mt-print-viewport { overflow-y: auto; }
+        @media print {
+          /* 缩放包裹层复位：sheet 的 absolute 定位重新锚回页面原点（与原打印语义逐字节等价） */
+          .mt-print-viewport { transform: none !important; height: auto !important; max-height: none !important; overflow: visible !important; }
+          #mt-print-sheet { transform: none !important; }
+        }
       `}</style>
 
       <Space wrap style={{ marginBottom: 16 }}>
@@ -313,17 +343,17 @@ export default function PrintPage() {
       </Space>
 
       <Row gutter={16}>
-        <Col span={9}>
-          <Card size="small" title={`资产选择（${assets.length} 条）`} style={{ marginBottom: 16 }}>
+        <Col xs={24} xl={9}>
+          <Card size="small" title={`资产选择（${shown.length} 条）`} style={{ marginBottom: 16 }}>
             <Space style={{ marginBottom: 8 }} wrap>
-              <Select style={{ width: 120 }} value={undefined} placeholder="状态筛选" options={STATUS_OPTIONS}
-                onChange={() => message.info("筛选后点重载资产生效")} />
+              <Select style={{ width: 120 }} value={statusFilter} placeholder="状态筛选" options={STATUS_OPTIONS}
+                onChange={(v) => setStatusFilter(v)} />
             </Space>
-            <div style={{ maxHeight: 380, overflowY: "auto" }}>
+            <div style={{ maxHeight: 380, overflow: "auto" }}>
               {loading ? <Spin style={{ display: "block", margin: "24px auto" }} /> : (
-                <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+                <table style={{ width: "100%", minWidth: 560, fontSize: 12, borderCollapse: "collapse" }}>
                   <tbody>
-                    {assets.map((a) => (
+                    {shown.map((a) => (
                       <tr key={a.tag_id} style={{ borderBottom: "1px solid #f0f0f0" }}>
                         {listCols.map((c, i) => (
                           <td key={i} style={{ padding: "4px 6px", width: c.width }}>{c.render ? c.render(a) : (a as never)[c.dataIndex!]}</td>
@@ -336,7 +366,7 @@ export default function PrintPage() {
             </div>
           </Card>
         </Col>
-        <Col span={15}>
+        <Col xs={24} xl={15}>
           <Card size="small" title="模板与码样式" style={{ marginBottom: 16 }} className="print-hide">
             <Tabs
               items={[
@@ -410,26 +440,37 @@ export default function PrintPage() {
           </Card>
 
           {chosen.length === 0 && (
-            <Alert type="info" showIcon message="从左侧勾选需要贴码的资产，右侧实时预览 A4 排版" />
+            <Alert type="info" showIcon message="从左侧勾选需要贴码的资产，下方实时预览 A4 排版" />
           )}
+
+          <Card
+            size="small"
+            id="mt-print-wrap"
+            title={`打印预览（已选 ${chosen.length} 枚 · A4 纵向 × ${pages.length} 页）`}
+            extra={chosen.length > 0 ? <Typography.Text type="secondary">{Math.round(fit * 100)}%</Typography.Text> : undefined}
+          >
+            {chosen.length === 0 ? (
+              <Typography.Text type="secondary">勾选资产后预览</Typography.Text>
+            ) : (
+              <div ref={vpRef} className="mt-print-viewport" style={{ height: naturalH.current * fit, maxHeight: 560 }}>
+                <div
+                  id="mt-print-sheet"
+                  ref={gridRef}
+                  style={{ transform: `scale(${fit})`, transformOrigin: "top left" }}
+                >
+                  {pages.map((pageAssets, pi) => (
+                    <div className="mt-page" key={pi}>
+                      {pageAssets.map((a) => (
+                        <TagCell key={a.tag_id} asset={a} px={Math.round(tpl.qrmm * 8)} />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Card>
         </Col>
       </Row>
-
-      <Card size="small" title={`打印预览（A4 纵向 × ${pages.length} 页）`} id="mt-print-wrap">
-        {chosen.length === 0 ? (
-          <Typography.Text type="secondary">勾选资产后预览</Typography.Text>
-        ) : (
-          <div id="mt-print-sheet" ref={gridRef}>
-            {pages.map((pageAssets, pi) => (
-              <div className="mt-page" key={pi}>
-                {pageAssets.map((a) => (
-                  <TagCell key={a.tag_id} asset={a} px={Math.round(tpl.qrmm * 8)} />
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
     </div>
   );
 }
