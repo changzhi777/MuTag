@@ -249,18 +249,38 @@ type importItem struct {
 }
 
 // importAssets POST /api/admin/import —— 一物一码拆分入库（同 seed 纪律）。
+// 幂等去重（dedup 默认 true）：每键跳过 min(C_db, C_in) 条、新建补差条（规划 P1 任务 2.3）。
 func (d Deps) importAssets(c *gin.Context) {
 	var req struct {
 		Items []importItem `json:"items"`
+		Dedup *bool        `json:"dedup"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil || len(req.Items) == 0 {
 		c.JSON(400, gin.H{"error": "items 为空"})
 		return
 	}
+	dedup := req.Dedup == nil || *req.Dedup
 	ctx := c.Request.Context()
 
+	units := expandUnits(req.Items)
+	existing, err := loadExistingCounts(ctx, d.Store.DB)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	// create 侧按"额度耗尽即新建"在插入循环隐式处理，这里只需 skip 额度
+	_, skip := classify(units, existing, dedup)
+	// skip/create 各自保序；create 需要知道每条的 Seq/Name/Keeper/BuyDate/Unit——
+	// 按 Key 反查原 item（同键多条共享 item 字段，qty 拆分仅影响条数）。
+
 	created := 0
+	skipped := len(skip)
 	var lastTag string
+	skipCountByKey := make(map[string]int)
+	for _, u := range skip {
+		skipCountByKey[u.Key]++
+	}
+
 	for _, rec := range req.Items {
 		if strings.TrimSpace(rec.Name) == "" {
 			continue
@@ -269,7 +289,24 @@ func (d Deps) importAssets(c *gin.Context) {
 		if qty < 1 {
 			qty = 1
 		}
+		bd, keeper := "", ""
+		if rec.BuyDate != nil {
+			bd = strings.TrimSpace(*rec.BuyDate)
+		}
+		if rec.Keeper != nil {
+			keeper = strings.TrimSpace(*rec.Keeper)
+		}
+		key := dedupeKey(strings.TrimSpace(rec.Name), keeper, bd)
+		var buyDate *time.Time
+		if rec.BuyDate != nil && *rec.BuyDate != "" {
+			buyDate, _ = parseDay(rec.BuyDate)
+		}
 		for j := 0; j < qty; j++ {
+			if dedup && skipCountByKey[key] > 0 {
+				// 该键还有"跳过额度"：本条为库内已有重复 → 跳过（顺序消耗与 classify 一致）
+				skipCountByKey[key]--
+				continue
+			}
 			tagID, err := d.Store.Tags().NextTagID(ctx)
 			if err != nil {
 				c.JSON(500, gin.H{"error": err.Error(), "created": created})
@@ -280,10 +317,6 @@ func (d Deps) importAssets(c *gin.Context) {
 			}); err != nil {
 				c.JSON(500, gin.H{"error": err.Error(), "created": created})
 				return
-			}
-			var buyDate *time.Time
-			if rec.BuyDate != nil && *rec.BuyDate != "" {
-				buyDate, _ = parseDay(rec.BuyDate)
 			}
 			assetID, err := d.Store.Assets().Create(ctx, &domain.Asset{
 				TagID: tagID, Name: strings.TrimSpace(rec.Name),
@@ -303,7 +336,42 @@ func (d Deps) importAssets(c *gin.Context) {
 			lastTag = tagID
 		}
 	}
-	c.JSON(200, gin.H{"created": created, "last_tag": lastTag})
+
+	dupDetail := make([]gin.H, 0)
+	for _, g := range buildGroups(units, existing) {
+		if g.Existing > 0 {
+			dupDetail = append(dupDetail, gin.H{
+				"key": g.Key, "name": g.Name, "keeper": g.Keeper, "buy_date": g.BuyDate,
+				"existing": g.Existing, "incoming": g.Incoming, "verdict": g.Verdict,
+			})
+		}
+	}
+	c.JSON(200, gin.H{
+		"created": created, "skipped": skipped, "duplicates": dupDetail, "last_tag": lastTag,
+	})
+}
+
+// importPrecheck POST /api/admin/import/precheck —— 只读预检：解析结果与库内比对的重复全貌（规划 P1 任务 2.3）。
+func (d Deps) importPrecheck(c *gin.Context) {
+	var req struct {
+		Items []importItem `json:"items"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || len(req.Items) == 0 {
+		c.JSON(400, gin.H{"error": "items 为空"})
+		return
+	}
+	ctx := c.Request.Context()
+	units := expandUnits(req.Items)
+	existing, err := loadExistingCounts(ctx, d.Store.DB)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	create, skip := classify(units, existing, true)
+	c.JSON(200, gin.H{
+		"groups":  buildGroups(units, existing),
+		"summary": gin.H{"create": len(create), "skip_exact": len(skip), "suspect": countSuspect(create, existing)},
+	})
 }
 
 // stats GET /api/admin/stats —— 状态分布 + 总数。

@@ -98,6 +98,7 @@ func NewRouter(d Deps) *gin.Engine {
 		authed.GET("/tags/scan-stats", d.scanStats)
 		authed.POST("/tags/:tagID/void", d.voidTag)
 		authed.POST("/import", d.importAssets)
+		authed.POST("/import/precheck", d.importPrecheck)
 		authed.GET("/stats", d.stats)
 
 		// M4 财务对接：模板 / 导出审计 / 导入预览确认回滚
