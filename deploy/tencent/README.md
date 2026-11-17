@@ -116,3 +116,13 @@ systemctl restart mutag
    `docker build -f backend/Dockerfile -t mutag:latest backend`
 5. **certbot**：`certbot --nginx -d mutag.qingmulife.cn -n` 自动改写 conf（443 + 80→301），
    服务器已有账户无需 -m；验证 `curl -s https://mutag.qingmulife.cn/healthz`
+
+## 香港 118 二次排障实录（2026-11-17 · 502 复活 + disabled 修复）
+
+- **症状**：.com 全路由 502（nginx 活着，上游 127.0.0.1:18000 无响应）；.cn（106）同库正常 → 定位纯 118 服务问题
+- **死因**：`mutag.service` 当日 10:53:01 被正常 stop（journalctl `Stopping mutag.service...服务已退出`，非 crash），
+  且 unit 为 **`disabled`** —— 无开机自启，停一次就躺到人工介入
+- **处置**：`systemctl start + enable`（补 Created symlink 自启）→ `/opt/mutag/src` git pull →
+  `go build -o mutag.new` **原子替换**（构建失败不影响在跑服务）→ restart → 公网全路由复验通过
+- **运维通道**：SSH 22 被本机 Clash TUN 掐断（Clash DIRECT 规则疑被冲）→ **OrcaTerm 网页终端全程自主执行**
+  （控制台实例卡片「登录」→ 免密连接 TAT/root）；落地页/NoRoute 版本随之上线
