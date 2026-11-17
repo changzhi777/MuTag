@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Button, Card, Space, Table, Typography, Upload, message } from "antd";
+import { App, Alert, Button, Card, Space, Table, Typography, Upload } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import * as XLSX from "xlsx";
@@ -41,6 +41,7 @@ function parseWorkbook(file: ArrayBuffer): ImportItem[] {
 }
 
 export default function ImportPage() {
+  const { message } = App.useApp();
   const [items, setItems] = useState<ImportItem[]>([]);
   const [fileName, setFileName] = useState("");
   const [submitting, setSubmitting] = useState(false);

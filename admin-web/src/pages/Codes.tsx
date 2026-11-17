@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Popconfirm, Select, Space, Table, Tag, Typography, message } from "antd";
+import { App, Popconfirm, Select, Space, Table, Tag, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { api, post } from "../api/client";
 import type { Tag as TagEntity } from "../types";
@@ -9,6 +9,7 @@ function fmtTime(v: string): string {
 }
 
 export default function Codes() {
+  const { message } = App.useApp();
   const [items, setItems] = useState<TagEntity[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);

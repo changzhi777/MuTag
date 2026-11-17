@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Button, Card, Form, Input, message } from "antd";
+import { App, Button, Card, Form, Input } from "antd";
 import { useNavigate } from "react-router";
 import { post, setToken } from "../api/client";
 
 export default function Login() {
+  const { message } = App.useApp();
   const nav = useNavigate();
   const [loading, setLoading] = useState(false);
 

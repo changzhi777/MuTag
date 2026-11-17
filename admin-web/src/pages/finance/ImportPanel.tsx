@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  Alert, Button, Card, Popconfirm, Select, Space, Statistic, Table, Tag, Typography, Upload, message
-} from "antd";
+import { App, Alert, Button, Card, Popconfirm, Select, Space, Statistic, Table, Tag, Typography, Upload } from "antd";
 import { CheckCircleOutlined, FileExcelOutlined, RollbackOutlined, UploadOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import * as XLSX from "xlsx";
@@ -34,6 +32,7 @@ const BATCH_TAG: Record<string, { color: string; text: string }> = {
 
 // 财务导入面板：上传 → 按模板反向解析出差异（新增/更新/错误）→ 人工确认入库 → 支持按批次回滚
 export default function ImportPanel({ mappings }: { mappings: { mapping_id: string; name: string }[] }) {
+  const { message } = App.useApp();
   const [mappingID, setMappingID] = useState("");
   const [fileName, setFileName] = useState("");
   const [preview, setPreview] = useState<PreviewResult | null>(null);

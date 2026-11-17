@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Button, Card, Popconfirm, Space, Spin, Statistic, Table, Tag, Typography, message } from "antd";
+import { App, Alert, Button, Card, Popconfirm, Space, Spin, Statistic, Table, Tag, Typography } from "antd";
 import { CheckCircleOutlined, ReloadOutlined } from "@ant-design/icons";
 import { DataGrid, type Column } from "react-data-grid";
 import "react-data-grid/lib/styles.css";
@@ -63,6 +63,7 @@ void SYSTEM_STATUS; // 预留：状态下拉编辑器（当前文本编辑，后
 
 // 表格编辑页：台账全量网格行内编辑（类 Excel）→ 改动集走差异预览 → 人工确认入库（审计/回滚链路全复用）
 export default function GridEdit() {
+  const { message } = App.useApp();
   const [rows, setRows] = useState<GridRow[]>([]);
   const [snapshot, setSnapshot] = useState<GridRow[]>([]);
   const [loading, setLoading] = useState(false);

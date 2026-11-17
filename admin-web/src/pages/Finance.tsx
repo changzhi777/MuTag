@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Tabs, Typography, message } from "antd";
+import { App, Tabs, Typography } from "antd";
 import { api } from "../api/client";
 import type { FinMapping } from "../types";
 import MappingEditor from "./finance/MappingEditor";
@@ -8,6 +8,7 @@ import ImportPanel from "./finance/ImportPanel";
 
 // 财务对接页：模板配置 / 导出（审计留痕）/ 导入（差异预览·确认·回滚）
 export default function Finance() {
+  const { message } = App.useApp();
   const [mappings, setMappings] = useState<FinMapping[]>([]);
 
   const reload = useCallback(async () => {

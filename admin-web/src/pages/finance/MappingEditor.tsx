@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Button, Input, Select, Space, Table, Typography, message } from "antd";
+import { App, Button, Input, Select, Space, Table, Typography } from "antd";
 import { DeleteOutlined, PlusOutlined, SaveOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import { put } from "../../api/client";
@@ -34,6 +34,7 @@ const textToFixedRows = (text: string): string[][] =>
 
 // 财务模板列映射编辑器：列名 ⇄ 系统字段 + 日期格式 + 表头附加行，保存即 version+1
 export default function MappingEditor({ mappings, onReload }: { mappings: FinMapping[]; onReload: () => void }) {
+  const { message } = App.useApp();
   const [currentID, setCurrentID] = useState<string>("");
   const [columns, setColumns] = useState<FinColumn[]>([]);
   const [dateFormat, setDateFormat] = useState("YYYY-MM-DD");

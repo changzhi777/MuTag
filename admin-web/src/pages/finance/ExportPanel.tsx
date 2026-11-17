@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Button, Card, DatePicker, Input, Select, Space, Table, Tag, Typography, message } from "antd";
+import { App, Button, Card, DatePicker, Input, Select, Space, Table, Tag, Typography } from "antd";
 import { DownloadOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { Dayjs } from "dayjs";
@@ -12,6 +12,7 @@ const STATUS_OPTIONS = Object.entries(STATUS_TEXT).map(([value, label]) => ({ va
 
 // 财务导出面板：过滤条件 → 模板映射输出行 → SheetJS 生成 XLSX 下载；后端留审计
 export default function ExportPanel({ mappings }: { mappings: FinMapping[] }) {
+  const { message } = App.useApp();
   const [mappingID, setMappingID] = useState("");
   const [status, setStatus] = useState("");
   const [dept, setDept] = useState("");

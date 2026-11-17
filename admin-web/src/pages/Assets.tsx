@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  Button, Drawer, Form, Input, InputNumber, Modal, Select, Space, Table, Tag, message
-} from "antd";
+import { App, Button, Drawer, Form, Input, InputNumber, Modal, Select, Space, Table, Tag } from "antd";
 import { PlusOutlined, ScanOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import { api, post, put } from "../api/client";
@@ -15,6 +13,7 @@ function fmtDate(v: string | null): string {
 }
 
 export default function Assets() {
+  const { message } = App.useApp();
   const [items, setItems] = useState<Asset[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -168,6 +167,7 @@ function AssetForm(props: {
   initial?: Asset;
   onSubmit: (draft: AssetDraft) => Promise<void>;
 }) {
+  const { message } = App.useApp();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 

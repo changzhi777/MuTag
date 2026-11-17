@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Button, Modal, Spin, Typography, message } from "antd";
+import { App, Alert, Button, Modal, Spin, Typography } from "antd";
 import { ScanOutlined } from "@ant-design/icons";
 
 // 网页摄像头扫码：BarcodeDetector API（Chrome/Edge/Safari 16.4+ 原生，零依赖）。
@@ -22,6 +22,7 @@ export default function ScanCamera({
   onClose: () => void;
   onDetected: (tagID: string) => void;
 }) {
+  const { message } = App.useApp();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState(false);

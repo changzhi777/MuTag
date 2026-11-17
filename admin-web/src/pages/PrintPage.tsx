@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Alert, Button, Card, Checkbox, Col, Radio, Row, Select, Space,
-  Spin, Statistic, Tabs, Typography, message
-} from "antd";
+import { App, Alert, Button, Card, Checkbox, Col, Radio, Row, Select, Space, Spin, Statistic, Tabs, Typography } from "antd";
 import { DownloadOutlined, PrinterOutlined, ReloadOutlined } from "@ant-design/icons";
 import QRCodeStyling from "qr-code-styling";
 import JSZip from "jszip";
@@ -104,6 +101,7 @@ const styleToOptions = (s: QrStyle, data: string, px: number): any => ({
 });
 
 export default function PrintPage() {
+  const { message } = App.useApp();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);

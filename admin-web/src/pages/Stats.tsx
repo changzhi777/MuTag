@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, Col, Progress, Row, Statistic, message } from "antd";
+import { App, Card, Col, Progress, Row, Statistic } from "antd";
 import { api } from "../api/client";
 import { STATUS_TEXT, type AssetStatus } from "../types";
 
@@ -9,6 +9,7 @@ interface StatsData {
 }
 
 export default function Stats() {
+  const { message } = App.useApp();
   const [data, setData] = useState<StatsData | null>(null);
 
   useEffect(() => {
