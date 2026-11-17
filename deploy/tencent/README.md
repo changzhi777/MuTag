@@ -88,7 +88,7 @@ systemctl restart mutag
 - **端点**：`GET/HEAD /qr/:urlCode?size=512`——服务端渲染活码 URL（`BASE_URL/t/{urlCode}`）PNG 码图；公开 + rateLimit 同桶 + active 码 Cache-Control 86400；void/不存在 → 404（与分流语义一致）
 - **实现**：`internal/qr` 薄封装 skip2/go-qrcode（MIT，`v0.0.0-20200617195104-da1b6568686e`，尺寸 clamp 64~1024）；e2e `TestE2EQRCode` 七断言
 - **106 部署链特殊处理**：`skip2` 无 git tag → 手写 go.mod 版本易错（pseudo-version 必须从 `goproxy.cn/.../@latest` 取真值）；alpine 容器缺 git 使 tidy 回源卡死 → **用 `docker.1ms.run/golang:1.26`（Debian 自带 git）跑 `go mod tidy`** 生成 go.sum；sed 替换 go.mod 版本注意 `[a-z0-9]*` 不匹配连字符（贪婪 `.*` 才安全）
-- **106 工作区 go.sum 为权威**（BUILD-OK + e2e PASS 实证）；仓库 go.sum 待本地网络可用时补交
+- **go.sum 已补交（2026-11-17）**：skip2 双哈希入库，与 sum.golang.org 权威记录逐字比对锚定；本机补交方法（沙箱 TLS MITM 拦 Go proxy 时适用）：curl 拉 zip/mod → `GOPROXY=file://` 本地代理 `go mod download -json` 算官方哈希 → `go mod download -json` 自动写入 go.sum（⚠️ -mod=mod 会自动写，勿手动重复追加）；GOMODCACHE/GOCACHE 指向 APFS 克隆目录（`cp -Rc` 零拷贝绕沙箱拒写）
 
 ## 广州 106 运维附录：Portainer 可视化容器管理（2026-11-17 上线）
 

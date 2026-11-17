@@ -63,7 +63,9 @@ tidy '*.png' "$PNG_DIR" "截图"
 tidy '*.yml' "$YML_DIR" "快照"
 
 if [ "$quiet" = 1 ]; then
-  [ "$moved" -gt 0 ] && echo "tidy: 已归档 $moved 个产物文件"
+  if [ "$moved" -gt 0 ]; then
+    echo "tidy: 已归档 $moved 个产物文件"
+  fi
 else
   if [ "$dry" = 1 ]; then
     echo "共 $moved 个待归档（--dry-run 未实际移动）"

@@ -1,7 +1,7 @@
 # MuTag（青沐动态码）· 企业资产活码管理小程序 — AI 上下文文档
 
-> 代号：**MuTag** ｜ 版本：**V1.1（M1 落地实态）** ｜ 更新时间：2026-11-16
-> 发布版本规程：**V1.0.x 第 3 位递增**（当前发布版 **V1.0.1**，锚定 e7954df M1-M4 全量）——`sh scripts/next_version.sh calc patch` 算号 / `apply patch` 一条命令全自动（三件套+commit+tag+push，脏工作区拒绝）；发布版（git tag/CHANGELOG.md）与本文档 changelog（AI 上下文文档演进线 V1.x）是两条线
+> 代号：**MuTag** ｜ 版本：**V1.14（生产双活入口实态）** ｜ 更新时间：2026-11-17
+> 发布版本规程：**V1.0.x 第 3 位递增**（当前发布版 **V1.0.4**）——`sh scripts/next_version.sh calc patch` 算号 / `apply patch` 一条命令全自动（三件套+commit+tag+push，脏工作区拒绝）；发布版（git tag/CHANGELOG.md）与本文档 changelog（AI 上下文文档演进线 V1.x）是两条线
 > 维护：init-architect 首轮 + /zcf:workflow 增量 · 配套索引：[.claude/index.json](./.claude/index.json)
 > 唯一事实来源：[MuTag-项目设计方案.md](./MuTag-项目设计方案.md)（v0.1，2026-11-16）——本文档全部内容提炼自它，冲突时以设计方案为准
 
@@ -25,11 +25,12 @@
 | 2026-11-17 | V1.11 | 🔳 **QR 功能完善（对标草料·B 档全量）+ 生产首次更新实战**：调研（GitHub 7 库 API 实测 + 草料 cli.im 产品拆解）→ 选型 qr-code-styling 1.9.2（MIT ★3K）+ jszip；**码版面打印工场重构**（130 行 → 全量）：标签模板 4 规格（30×30/40×30/50×50/60×40 自动行列+切刀线）+ 字段勾选 + 码美化全量 UI（点阵 5 形状/单色渐变/角块/容错 L-TH/logo 嵌入/透明背景，localStorage 持久化）+ 台账多选批量（A4 页数自动 + PNG zip 导出）+ 扫码统计（后端 /tags/scan-stats 聚合 + e2e + 码管理列）；**生产首次更新实战**暴露 pooler 3F000（search_path 空 crash 循环 counter 35+）→ **应用/备份全部切直连**（db.<ref>:5432，绕开 pooler 全类问题；simple protocol 保留作保险）→ 生产全通（healthz/H5/scan-stats 鉴权拦截）；登录"失效"排障归档（密码生成链路不可见字符 → 三板斧：cat env / proc environ / 本机 curl）；发版 V1.0.4 |
 | 2026-11-17 | V1.12 | 🔗 **活码域名收敛服务端配置（.cn 双轨）**：生成的 QR 链接原随后台入口域名漂移（.com/.cn 不定）→ 新增 `/api/admin/config` 下发 `BASE_URL`（单一事实源），打印工场活码内容改用服务端域名（fallback origin）；生产 BASE_URL 切 **https://mutag.qingmulife.cn**（.cn 入口，微信侧绕 .com 拦截）；`mutag.qingmulife.cn` A 记录 + nginx 301（路径透传）+ certbot TLS 全部上线并实测；运维通道经验：OrcaTerm 编辑器发送对双引号做 `\"` 转义破坏 bash 语法（单引号/零引号命令可行） |
 | 2026-11-17 | V1.13 | 🧪 **生产真机测试轮 + 入口定案（方案 A 独立运行）**：登录修复（ADMIN_PASSWORD 重设 → 旧会话失效为预期安全行为）+ 单枚标签 hover 下载 PNG/SVG 上线；真机扫码排障定案——微信拦截 `qingmulife.com/cn`（均未备案，香港机无法备案），用户裁定 **方案 A：MuTag 独立运行**（不走备案/境内机路线）；双域名入口定案（.com 主 + .cn 直连，互不跳转）+ QR 内容 = mutag.qingmulife.cn（BASE_URL 收敛生效）；可立即用路径：**手机系统浏览器扫活码**（绕微信 ✓）+ 小程序「手动输入编号」MT-2026-000004（体验版真机受域名校验限制已知）；扫码计数已在生产工作（000004=5 次 / 000001=2 次，e2e+实测数据入 scan_logs）；IaC 同步（mutag-cn.nginx.conf server_name 修正 qingmulife.cn） |
+| 2026-11-17 | V1.14 | 🚀 **生产入口迁移广州 106（活码主入口）+ 服务端 QR 端点 + Portainer**：**DNSPod 权威把 mutag.qingmulife.cn 切至广州 106（106.53.168.73）**——踩坑：单条「添加记录」UI 不推权威（等 10 分钟 NXDOMAIN），**批量操作通道（txt 导入/批量修改）秒推**；106 连接形态 = **session pooler :5432 + simple protocol**（106 无 IPv6 出口连不上 db. 直连 IPv6，与 118 直连形态并存不强求统一）；certbot 一条命令签 .cn TLS；**服务端活码 QR 端点 `/qr/:urlCode?size=` 上线**（skip2/go-qrcode 薄封装，公开+限流同桶+Cache-Control 86400，e2e 七断言；部署坑：skip2 无 tag 须从 goproxy @latest 取 pseudo-version 真值、alpine 缺 git 用 docker.1ms.run/golang:1.26 跑 tidy）；**Portainer 汉化版**上 106（ser.qingmulife.cn/docker，--admin-password-file 通道，nginx 尾斜杠剥前缀）；**go.sum 欠账清偿**（skip2 双哈希入库）：本机沙箱 TLS MITM 拦 Go proxy → curl 拉 zip/mod + `GOPROXY=file://` 离线算官方哈希 + sum.golang.org 权威记录逐字比对锚定，GOMODCACHE/GOCACHE 指 APFS 克隆目录，全量 build + test 全绿；IaC 归档 mutag-gz106.nginx.conf |
 ---
 
 ## ⚠️ 项目现状声明（先读这段）
 
-- **生产已上线（2026-11-17）**：**https://mutag.qingmulife.com**（腾讯云 Lighthouse 香港 43.129.201.118 · systemd + nginx TLS + Supabase PG17）；管理后台密码见远端 `/opt/mutag/mutag.env`；部署拓扑与排障实录见 `deploy/tencent/README.md`（IaC 归档）；生产空库——真实资产经管理后台导入（衔接 M4 验收）；Supabase 库中 000001-000003 为 e2e 残留测试数据
+- **生产已上线（2026-11-17）· 双活入口，广州 106 为活码主入口**：**https://mutag.qingmulife.cn → 广州 106（106.53.168.73）**（DNS 权威已切，certbot TLS，nginx IaC 见 `deploy/tencent/mutag-gz106.nginx.conf`）；香港 118（43.129.201.118，mutag.qingmulife.com）继续在跑作为 .com 入口；两机均 systemd/docker + nginx TLS + Supabase PG17，**连接形态不要求一致**（118 直连 db.:5432 / 106 session pooler :5432——106 无 IPv6 出口）；管理后台密码见远端 `/opt/mutag/mutag.env`；部署拓扑与排障实录见 `deploy/tencent/README.md`（IaC 归档，含广州 106 上线实录）；生产库待真实资产经管理后台导入（衔接 M4 验收）；Supabase 库中 000001-000003 为 e2e 残留测试数据
 - **M1 已落地（2026-11-16）**：`backend/`（活码服务）+ `miniprogram/`（员工端两页）+ `deploy/`（验收）+ `README.md` 均已存在并可运行；出口标准「外部扫码看到资产页」已通过 `bash deploy/verify.sh` 七连检验证。
 - **存储形态（关键裁决）**：开发/验收 = **SQLite**（modernc 纯 Go 驱动，`backend/data/mutag.db`，零外部依赖）+ 进程内 TTL 缓存；上线 = PG17+Redis7（`deploy/docker-compose.yml` 保留，切换点收敛在 `internal/db` 连接层 + 迁移方言文件）。**设计方案里的 Redis 限流/CDN 为 M2+ 上线项，M1 未实现。**
 - **仓库实态**：GitHub 公开仓 `github.com/changzhi777/MuTag`（2026-11-16 首发 a/22e1ebb，M1-M4 单提交 104 文件）；`.gitignore` 含 .claude/.zcf/.spec-workflow/.pnpm-store/backend/server/*.tsbuildinfo；真实数据 xlsx 按用户裁决入库

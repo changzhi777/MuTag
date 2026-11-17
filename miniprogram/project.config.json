@@ -16,5 +16,6 @@
     }
   },
   "libVersion": "latest",
-  "condition": {}
+  "condition": {},
+  "simulatorPluginLibVersion": {}
 }
