@@ -44,8 +44,8 @@ const DEFAULT_STYLE: QrStyle = {
   cornerSquareType: "extra-rounded",
   cornerDotType: "dot",
   ecl: "H",
-  logoOn: false,
-  logoDataUrl: "",
+  logoOn: true,
+  logoDataUrl: "/logo.png", // 青沐品牌 logo（public/logo.png），用户可上传覆盖或关闭
   bgTransparent: true
 };
 

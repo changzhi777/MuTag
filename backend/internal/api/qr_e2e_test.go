@@ -67,4 +67,17 @@ func TestE2EQRCode(t *testing.T) {
 	if w := gr.do(t, http.MethodGet, "/qr/MT-2026-000002", ""); w.Code != http.StatusNotFound {
 		t.Fatalf("void 码应 404，got %d", w.Code)
 	}
+
+	// 8) 默认带 logo（bytes > 纯码）；logo=0 出纯码
+	withLogo := gr.do(t, http.MethodGet, "/qr/MT-2026-000003", "")
+	if withLogo.Code != http.StatusOK {
+		t.Fatalf("logo 版应 200，got %d", withLogo.Code)
+	}
+	noLogo := gr.do(t, http.MethodGet, "/qr/MT-2026-000003?logo=0", "")
+	if noLogo.Code != http.StatusOK {
+		t.Fatalf("纯码版应 200，got %d", noLogo.Code)
+	}
+	if withLogo.Body.Len() <= noLogo.Body.Len() {
+		t.Fatalf("logo 版 bytes（%d）应大于纯码版（%d）", withLogo.Body.Len(), noLogo.Body.Len())
+	}
 }
