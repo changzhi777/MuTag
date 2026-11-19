@@ -4,7 +4,7 @@ package qr
 
 import (
 	"bytes"
-	"embed"
+	_ "embed"
 	"fmt"
 	"image"
 	"image/color"
