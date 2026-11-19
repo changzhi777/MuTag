@@ -1,6 +1,8 @@
 # MuTag 活码服务 · 多阶段构建（单二进制，最终镜像零 Go 工具链）
 FROM golang:1.26-alpine AS build
 WORKDIR /src
+ENV GOPROXY=https://goproxy.cn,direct
+ENV GOSUMDB=off
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
