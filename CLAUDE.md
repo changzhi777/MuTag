@@ -1,6 +1,6 @@
 # MuTag（青沐动态码）· 企业资产活码管理小程序 — AI 上下文文档
 
-> 代号：**MuTag** ｜ 版本：**V1.15（重复事故根治三连实态）** ｜ 更新时间：2026-11-17
+> 代号：**MuTag** ｜ 版本：**V1.16（模块详档 + 服务端 QR 实态轮）** ｜ 更新时间：2026-11-18 08:22 (CST)
 > 发布版本规程：**V1.0.x 第 3 位递增**（当前发布版 **V1.0.4**）——`sh scripts/next_version.sh calc patch` 算号 / `apply patch` 一条命令全自动（三件套+commit+tag+push，脏工作区拒绝）；发布版（git tag/CHANGELOG.md）与本文档 changelog（AI 上下文文档演进线 V1.x）是两条线
 > 维护：init-architect 首轮 + /zcf:workflow 增量 · 配套索引：[.claude/index.json](./.claude/index.json)
 > 唯一事实来源：[MuTag-项目设计方案.md](./MuTag-项目设计方案.md)（v0.1，2026-11-16）——本文档全部内容提炼自它，冲突时以设计方案为准
@@ -27,14 +27,19 @@
 | 2026-11-17 | V1.13 | 🧪 **生产真机测试轮 + 入口定案（方案 A 独立运行）**：登录修复（ADMIN_PASSWORD 重设 → 旧会话失效为预期安全行为）+ 单枚标签 hover 下载 PNG/SVG 上线；真机扫码排障定案——微信拦截 `qingmulife.com/cn`（均未备案，香港机无法备案），用户裁定 **方案 A：MuTag 独立运行**（不走备案/境内机路线）；双域名入口定案（.com 主 + .cn 直连，互不跳转）+ QR 内容 = mutag.qingmulife.cn（BASE_URL 收敛生效）；可立即用路径：**手机系统浏览器扫活码**（绕微信 ✓）+ 小程序「手动输入编号」MT-2026-000004（体验版真机受域名校验限制已知）；扫码计数已在生产工作（000004=5 次 / 000001=2 次，e2e+实测数据入 scan_logs）；IaC 同步（mutag-cn.nginx.conf server_name 修正 qingmulife.cn） |
 | 2026-11-17 | V1.14 | 🚀 **生产入口迁移广州 106（活码主入口）+ 服务端 QR 端点 + Portainer**：**DNSPod 权威把 mutag.qingmulife.cn 切至广州 106（106.53.168.73）**——踩坑：单条「添加记录」UI 不推权威（等 10 分钟 NXDOMAIN），**批量操作通道（txt 导入/批量修改）秒推**；106 连接形态 = **session pooler :5432 + simple protocol**（106 无 IPv6 出口连不上 db. 直连 IPv6，与 118 直连形态并存不强求统一）；certbot 一条命令签 .cn TLS；**服务端活码 QR 端点 `/qr/:urlCode?size=` 上线**（skip2/go-qrcode 薄封装，公开+限流同桶+Cache-Control 86400，e2e 七断言；部署坑：skip2 无 tag 须从 goproxy @latest 取 pseudo-version 真值、alpine 缺 git 用 docker.1ms.run/golang:1.26 跑 tidy）；**Portainer 汉化版**上 106（ser.qingmulife.cn/docker，--admin-password-file 通道，nginx 尾斜杠剥前缀）；**go.sum 欠账清偿**（skip2 双哈希入库）：本机沙箱 TLS MITM 拦 Go proxy → curl 拉 zip/mod + `GOPROXY=file://` 离线算官方哈希 + sum.golang.org 权威记录逐字比对锚定，GOMODCACHE/GOCACHE 指 APFS 克隆目录，全量 build + test 全绿；IaC 归档 mutag-gz106.nginx.conf |
 | 2026-11-17 | V1.15 | 🛡️ **重复事故根治三连（P0/P1/P2）+ 66 条清理实战 + LAN 数据库盘点**：**事故**：antd 6 × React 19 静态 message 全静默 → 导入三连点 66 条重复入库（135→74 收敛）。**P0 提示根治**：main.tsx 四层包裹 AntdApp + 12 文件 43 处静态 message 换 App.useApp() + build.sh 防回归闸门（/usr/bin/grep 绝对路径兼容 ugrep + 双形态检测 + \|\| true 防 set -e 误杀，拦截/通过双测）。**P1 导入去重**：utils/date.ts 序列号 UTC 数学（cellDates 本地时区补偿实测 04-23 读成 04-22，序列号 46135=04-23 权威）+ internal/api/dedupe.go 键归一化 min/max 幂等（name\|keeper\|date 小写压空白）+ /import/precheck 只读预检 + /import dedup 默认 true（force 逃生口）+ ImportPage 预检三态 UI（新建/跳过/疑似 Popover）+ e2e 六场景全绿；**生产验收彩蛋**：precheck 算出「将新建 5 条」正好补齐首次点击中断的缺失资产，台账 73→78 对账闭环。**66 条重复清理**：curl/Playwright 双通道精确比对（name\|keeper 聚合避时区漂移）→ Supabase SQL Editor 事务删（4 表快照 _bak_1117_* 可回滚）→ 139→73 全绿。**P2 存量清洗功能**：0004 迁移双方言 cleanup_jobs 审计 + cleanup_repo（快照 4 表/单事务原子清理/restore 回补/PG setval 序列重推）+ cleanup API（scan 预标 delete/void 双 action——无履历无扫码才删、有履历改报废保留 + execute confirm_count 防误触 + jobs 审计列表）+ CleanupPage 三步流 UI（Steps/Segmented 策略/行级色标/danger confirm/Result 快照恢复）；**纪律 1 推论落地**：tags 永不物理删（nextTagID=MAX+1 实证物理删必致码号回池）一律置 void 保留号簿；e2e TestE2ECleanupChain 全绿（分组预标/混合清理/confirm 拒绝/快照回滚/tags 恢复/号不复用）；修五坑：SQLite 方言 now()::text、modernc 多 VALUES 占位符、快照表名连字符非法、events/scanlogs 快照命名不一致、MarkExecuted 参数序错位（executed_at 收 jobID）；**验收实战再揪 keepN=1 误判**——8 组「重复」实为 xlsx qty 语义合法多件（险误删 11 条），单簇保护上线（同簇数=1 且无权威文件 → 整组不进重复列表，生产复扫 78 条 0 重复绿条实证）。**LAN 数据库盘点**：10.10.10.0/24 扫描（nc 初扫 + nmap -sT 复核，nc 有假阳性 .150/.12:6379）→ 2 PG（.11/.12，pg_hba 未放行本机段）+ 4 Redis（.11 裸奔 ⚠️ / .13/.14/.18 有密码）；DB Kit 连接配置总表 `.zcf/plan/current/db-kit-connections.md`（14 条：Supabase×2/LAN×5/云隧道×3/SQLite×4）；**运维通道新增**：Playwright MCP 有腾讯云登录态可全程自主操作 OrcaTerm（免密 TAT/root，SSH 22 被 Clash TUN 掐断的替代通道） |
+| 2026-11-18 | V1.16 | 📚 **模块详档首建 ×4 + 产物归档工具链 + 服务端 QR 实态入档**：① **四模块 CLAUDE.md 首次生成**（[backend](./backend/CLAUDE.md) / [admin-web](./admin-web/CLAUDE.md) / [miniprogram](./miniprogram/CLAUDE.md) / [deploy](./deploy/CLAUDE.md)，均带导航面包屑——首轮规划态未建，本轮补齐；接口全景 / 双形态存储 / 21 测试函数 / 打印工场与 message 闸门 / 双活拓扑与 Portainer 附录逐一入档）② **产物自动归档工具链**：`scripts/tidy_artifacts.sh`（根目录散落 png→`deploy/tencent/screenshots/`、yml→`.playwright-mcp/snapshots/`；护栏=git 已跟踪文件一律不动、同名追加后缀永不覆盖）+ `.githooks/pre-commit`（core.hooksPath 已挂——提交即自动整理）③ **服务端 QR 端点实态确认入档**（上线本身见 V1.14）：`internal/qr`（skip2 薄封装，size 钳 64-1024 缺省 512）+ `internal/api/qr.go`（复用 lookupTagID 校验，void→404 与分流语义一致）+ e2e TestE2EQRCode 七断言 106 容器 PASS + 公网 200 实测 + Portainer 附录在 `deploy/tencent/README.md` 运维附录段 ④ **qr-logo 登记为待办**（[.zcf/plan/current/qr-logo.md](./.zcf/plan/current/qr-logo.md) 已批准**未实施**：`internal/qr` 升级 withLogo（纠错 Medium→High + 中心白垫 22% + logo 贴图 18% + go:embed）、`?logo=0` 开关、PrintPage 默认 logoOn+`/logo.png`、部署 106；logo 原图 256×256 RGBA 已定位 `/Volumes/user/新素材/微信图片_20260903153544_17_1821.png`）——**勿当作已完成** ⑤ Mermaid 重画（含 internal/qr + 双活生产拓扑 + 可点击模块文档）· index.json v1.5.0 |
+| 2026-11-19 | V1.17 | 🎨 **QR 码中心嵌青沐 logo（qr-logo 五步全落地）**：logo 资产双处入库（`admin-web/public/logo.png` 256px + `internal/qr/assets/logo.png` 64px sips 预缩——沙箱拦 sips 用 Go 标准库双线性缩图器替代）；`internal/qr` Render 加 withLogo（纠错 Medium→**High** 30% 容错 + 白垫 22% + logo 贴图 18% + go:embed）；`/qr/:urlCode` 默认带 logo、`?logo=0` 出纯码；PrintPage 默认 logoOn+`/logo.png`（dist 重建 embed 同步）；e2e 补第八断言（logo bytes > 纯码）。**部署坑四连**：① `import "embed"` 须 `_ "embed"`（blank import——只用指令不用符号时报 not used）② 106 `fetch --depth 1` 对 GitHub TLS 断连会**静默损坏 blob**（\t 被映射成 \x0C/\x14 控制字符，checkout 恢复仍脏——qr.go 最终以本地 scp 单文件直传根治）③ Dockerfile GOPROXY/GOSUMDB ENV 曾是 106 未提交修改被 reset 清掉 → 正式入 git（52c34ff）④ sed 换行注入在 OrcaTerm 链路不可靠（\n 变字面量吞行）——长文件传输一律 scp/tar，OrcaTerm 只做短命令。**终验：公网 `mutag.qingmulife.cn/qr/MT-2026-000001` logo 版 10926 字节 > 纯码 811，青沐彩色 logo 居中白垫清晰可见**；PrintPage 默认品牌码随 dist 重建同步（新用户自动开启）。遗留：`28ab633`（embed 修正）push 待 Clash 稳定 · 106 工作区 go.sum/Dockerfile sed 变更待 git 回补 |
+
 ---
 
 ## ⚠️ 项目现状声明（先读这段）
 
-- **生产已上线（2026-11-17）· 双活入口，广州 106 为活码主入口**：**https://mutag.qingmulife.cn → 广州 106（106.53.168.73）**（DNS 权威已切，certbot TLS，nginx IaC 见 `deploy/tencent/mutag-gz106.nginx.conf`）；香港 118（43.129.201.118，mutag.qingmulife.com）继续在跑作为 .com 入口；两机均 systemd/docker + nginx TLS + Supabase PG17，**连接形态不要求一致**（118 直连 db.:5432 / 106 session pooler :5432——106 无 IPv6 出口）；管理后台密码见远端 `/opt/mutag/mutag.env`；部署拓扑与排障实录见 `deploy/tencent/README.md`（IaC 归档，含广州 106 上线实录）；生产库待真实资产经管理后台导入（衔接 M4 验收）；Supabase 库中 000001-000003 为 e2e 残留测试数据
-- **M1 已落地（2026-11-16）**：`backend/`（活码服务）+ `miniprogram/`（员工端两页）+ `deploy/`（验收）+ `README.md` 均已存在并可运行；出口标准「外部扫码看到资产页」已通过 `bash deploy/verify.sh` 七连检验证。
-- **存储形态（关键裁决）**：开发/验收 = **SQLite**（modernc 纯 Go 驱动，`backend/data/mutag.db`，零外部依赖）+ 进程内 TTL 缓存；上线 = PG17+Redis7（`deploy/docker-compose.yml` 保留，切换点收敛在 `internal/db` 连接层 + 迁移方言文件）。**设计方案里的 Redis 限流/CDN 为 M2+ 上线项，M1 未实现。**
-- **仓库实态**：GitHub 公开仓 `github.com/changzhi777/MuTag`（2026-11-16 首发 a/22e1ebb，M1-M4 单提交 104 文件）；`.gitignore` 含 .claude/.zcf/.spec-workflow/.pnpm-store/backend/server/*.tsbuildinfo；真实数据 xlsx 按用户裁决入库
+- **生产已上线（2026-11-17）· 双活入口，广州 106 为活码主入口**：**https://mutag.qingmulife.cn → 广州 106（106.53.168.73）**（DNS 权威已切，certbot TLS，nginx IaC 见 `deploy/tencent/mutag-gz106.nginx.conf`）；香港 118（43.129.201.118，mutag.qingmulife.com）继续在跑作为 .com 入口；两机均 systemd/docker + nginx TLS + Supabase PG17，**连接形态不要求一致**（118 直连 db.:5432 / 106 session pooler :5432——106 无 IPv6 出口）；**服务端活码 QR 端点 `/qr/:urlCode` 双机已部署**（106 容器 e2e PASS + 公网 200 实测）；Portainer 汉化版挂 106（`ser.qingmulife.cn/docker/`）；管理后台密码见远端 `/opt/mutag/mutag.env`；部署拓扑与排障实录见 `deploy/tencent/README.md`（IaC 归档，含广州 106 上线实录 + Portainer 运维附录）；生产库 78 条真实资产（2026-11-17 重复清理后对账闭环）；Supabase 库中 000001-000003 为 e2e 残留测试数据
+- **开发工具链（2026-11-18 入档）**：`scripts/tidy_artifacts.sh` + `.githooks/pre-commit`（`core.hooksPath .githooks` 已挂）——提交自动归档根目录散落的截图/浏览器快照（git 已跟踪文件与正式产物一律不动）；`scripts/next_version.sh` 发布规程 · `scripts/deploy_tencent.sh` 腾讯云一键部署
+- **下一轮待办（已批准·未实施，勿当作已完成）**：**QR 码中心嵌 logo**——规划见 [.zcf/plan/current/qr-logo.md](./.zcf/plan/current/qr-logo.md)：logo 资产两处入库（`admin-web/public/logo.png` 256px + `backend/internal/qr/assets/logo.png` 64px）、`internal/qr` Render 加 withLogo（纠错 Medium→High + 中心白垫 + go:embed）、`/qr/:urlCode?logo=0` 开关、PrintPage 默认 logoOn、部署 106 公网验证
+- **M1-M4 代码全部落地**：`backend/` + `admin-web/` + `miniprogram/` + `deploy/` 四模块均为实态且各有 CLAUDE.md 详档（改代码前先读对应模块文档）；M2 真机联调与 M4 真实财务文件验收为余项
+- **存储形态（关键裁决）**：开发/验收 = **SQLite**（modernc 纯 Go 驱动，`backend/data/mutag.db`，零外部依赖）+ 进程内 TTL 缓存；上线 = **Supabase PG17**（`DATABASE_URL` 单变量切换；自建 PG17+Redis7 compose 保留为备选）。Redis 限流替换点收敛在 `internal/cache/limiter.go`
+- **仓库实态**：GitHub 公开仓 `github.com/changzhi777/MuTag`（2026-11-16 首发 22e1ebb）；`.gitignore` 含 .claude/.zcf/.spec-workflow/.pnpm-store/backend/server/*.tsbuildinfo；真实数据 xlsx 按用户裁决入库
 - `.spec-workflow/` 是 spec-workflow MCP 工具的模板目录，**不是项目模块**，勿当作代码阅读。
 
 ---
@@ -50,63 +55,73 @@
 | 码 | 形态 | 场景 |
 |---|---|---|
 | 小程序码 | 微信 `getUnlimitedQRCode`，scene=`t:{tagId}`，永久码 | 微信内扫码直达小程序资产页（首选路径） |
-| 活码 URL | 普通二维码，内容 `https://mu.qingmu.cn/t/{tagId}` | 外部扫码枪/相机/非微信环境；微信内扫码 302 → 唤起小程序 |
+| 活码 URL | 普通二维码，内容由服务端 `BASE_URL` 收敛（当前 `https://mutag.qingmulife.cn/t/{urlCode}`） | 外部扫码枪/相机/非微信环境；微信内 302 → 唤起小程序（WEAPP_JUMP_URL 可配）；码图获取 = 打印工场前端生成或服务端 `/qr/:urlCode` 端点 |
 
 内容更新 = 改 `tags` 表绑定的资产数据，扫码即最新——**码图物理上永不需要重印**。每次变更存 `asset_events` 履历快照，扫码详情页可看完整时间线。防伪扩展位：活码 URL 支持 `?sig=HMAC(tagId+ts)` 滚动签名（二期）。
 
 ---
 
-## 架构总览（实态 + 规划混合）
-
-> 🟢 = M1 已实现；📋 = 待建（M2+）。
+## 架构总览与模块结构图（2026-11-18 实态）
 
 ```mermaid
 graph TD
-    MP["微信小程序 · 员工端<br/>扫码/详情 🟢 · 快捷操作/上报/历史 📋 M2"]
-    AW["Web 管理后台 📋 M3<br/>框架待定（待定问题 1）"]
-    SL["活码分流器 🟢<br/>/t/{urlCode} → 302 · HEAD 兼容<br/>缓存 60s + scan_logs"]
-    H5["H5 只读详情页 🟢<br/>SSR 零外链 · void/404 双态"]
+    subgraph CLIENT["客户端层"]
+        MP["miniprogram · 员工端 🟢<br/>扫码/详情/四动作/上报/历史"]
+        AW["admin-web · 管理后台 🟢<br/>台账/码管理/打印工场/导入去重<br/>表格编辑/财务/清洗/统计"]
+        EXT["外部扫码<br/>系统浏览器 / 扫码枪"]
+    end
 
-    API["API 服务 🟢 Go 1.26 + Gin<br/>/t + /h5/t + /api/v1/assets + /healthz<br/>users/财务域 📋 M2/M4"]
+    subgraph BE["backend · Go 1.26 + Gin 单二进制（SPA embed）"]
+        SL["活码分流 /t/:urlCode<br/>302 · HEAD · IP 令牌桶限流"]
+        QREP["服务端 QR /qr/:urlCode<br/>internal/qr · PNG · 长缓存"]
+        H5["H5 SSR /h5/t/:tagID<br/>void/404 双态"]
+        API["/api/v1 员工端<br/>+ /api/admin 管理端<br/>台账/导入去重/财务/清洗/统计"]
+        CACHE["进程内 TTL 缓存 60s<br/>+ limiter.go（Redis 替换点）"]
+    end
 
-    DB[("存储 🟢 开发: SQLite<br/>📋 上线: PG17")]
-    CACHE[("缓存 🟢 开发: 进程内 TTL<br/>📋 上线: Redis 7")]
-    OSS["对象存储 📋（码图/导入导出）"]
+    DB[("Supabase PG17 生产<br/>SQLite = 开发形态<br/>迁移 0001-0004 双方言")]
+    GZ["🌐 广州 106 · 活码主入口<br/>mutag.qingmulife.cn<br/>Docker + session pooler :5432"]
+    HK["🌐 香港 118 · .com 入口<br/>mutag.qingmulife.com<br/>systemd + db. 直连 :5432"]
+    DEP["deploy · verify.sh 15 连检<br/>+ tencent/ IaC + Portainer 附录"]
+    TOOLS["scripts + .githooks<br/>版本规程/一键部署/产物归档"]
 
-    MP -->|"wx.request · HTTPS"| API
-    AW -->|"HTTPS · 角色鉴权 📋"| API
-    SL -->|"302 微信内唤起小程序 📋 M2"| MP
-    SL -->|"302 外部浏览器"| H5
-    API --> DB
+    MP -->|"wx.request"| API
+    AW -->|"HTTPS"| API
+    EXT -->|"扫活码"| SL
+    SL -->|"内部浏览器"| H5
+    SL -.->|"WEAPP_JUMP_URL 配置后"| MP
+    QREP --> SL
+    SL --> CACHE
     API --> CACHE
-    API -.-> OSS
+    CACHE --> DB
+    API --> DB
+    GZ --> BE
+    HK --> BE
+    DEP -.-> BE
+    TOOLS -.-> DEP
 
-    style MP fill:#f0fff4,stroke:#4a9d6e
-    style SL fill:#f0fff4,stroke:#4a9d6e
-    style H5 fill:#f0fff4,stroke:#4a9d6e
-    style API fill:#f0fff4,stroke:#4a9d6e
-    style DB fill:#f0fff4,stroke:#4a9d6e
-    style CACHE fill:#f0fff4,stroke:#4a9d6e
-    style AW fill:#f0f7ff,stroke:#4a90d9,stroke-dasharray:6 3
-    style OSS fill:#f0f7ff,stroke:#4a90d9,stroke-dasharray:6 3
+    click MP "./miniprogram/CLAUDE.md" "miniprogram 模块文档"
+    click AW "./admin-web/CLAUDE.md" "admin-web 模块文档"
+    click BE "./backend/CLAUDE.md" "backend 模块文档"
+    click QREP "./backend/CLAUDE.md" "internal/qr 详见 backend 模块文档"
+    click DEP "./deploy/CLAUDE.md" "deploy 模块文档"
 ```
 
-**业务链路**：贴码（后台批量生成 + 打印 PDF 版面）→ 员工微信/外部扫码 → API（缓存命中则 <200ms 返回）→ 详情/快捷操作（写 `asset_events` 履历）→ 管理后台台账与财务模板配置 → 异步导出 XLSX 对齐用友 U8 / 金蝶云星空 / 管家婆模板（或反向导入，差异预览后入库）。
+**业务链路**：贴码（打印工场批量出码图 / 服务端 `/qr` 端点）→ 员工微信/外部扫码 → API（缓存命中 <200ms）→ 详情/快捷操作（写 `asset_events` 履历）→ 管理后台台账/导入去重/表格编辑 → 财务模板导出对齐用友 U8 / 金蝶云星空 / 管家婆（反向导入两段式 + 按批次回滚）→ 重复清洗三步流（快照可恢复）。
 
 ---
 
 ## 模块索引
 
-> M1 已落地模块见 CLAUDE.md 详档（增量运行 `/zcf:init-project` 自动生成）。
-
-| 路径 | 职责 | 状态 | 技术栈 | 备注 |
+| 路径 | 职责 | 状态 | 技术栈 | 本地文档 |
 |---|---|---|---|---|
-| `backend/` | 活码服务：/t 分流 + /h5 SSR + /api/v1 JSON + healthz；四表自迁移；seed 两步导入 | 🟢 M1 已建 | Go 1.26 + Gin + SQLite（modernc） | `internal/{domain,repo,api,h5,db,cache,config}`；测试：api 分流 + h5 渲染 smoke |
-| `miniprogram/` | 员工端：扫码首页 + 详情 + 快捷操作四动作 + 我的上报 + 扫码历史 | 🟢 M2 主体已建 | 原生微信小程序（测试号） | 登录 dev 模式（WECHAT_APPID 未配=mock openid）；真机联调 📋 |
-| `admin-web/` | 管理后台：登录/台账 CRUD/码管理/批量导入/**财务对接（模板配置+导出审计+导入预览确认回滚）**/统计（财务模板 📋 M4；PDF 打印版面 📋） | 🟢 M3 提前已建 | React 19 + AntD 6 + Vite + TS | 构建产物 embed 进 Go 二进制；`bash admin-web/build.sh` 一键重建 |
-| `deploy/` | verify.sh 一键验收 + PG 上线 compose + README（形态说明） | 🟢 M1 已建 | bash / docker-compose | 验收 15 连检（含 M4 财务）；PG 形态 M2+ 切换 |
+| `backend/` | 活码服务：/t 分流 + **/qr 码图端点** + /h5 SSR + /api/v1 员工端 + /api/admin 管理端；0001-0004 双方言自迁移；管理 SPA embed 单二进制 | 🟢 生产运行 | Go 1.26 + Gin + modernc/pgx 双形态 | [CLAUDE.md](./backend/CLAUDE.md) |
+| `admin-web/` | 管理后台 8 页：登录/台账 CRUD/码管理/**码版面打印工场**/批量导入（precheck+dedup）/**表格编辑**/**财务对接**/**重复清洗**/统计；build.sh 静态 message 闸门 | 🟢 生产运行 | React 19 + AntD 6 + Vite + TS | [CLAUDE.md](./admin-web/CLAUDE.md) |
+| `miniprogram/` | 员工端 5 页：扫码（四形态编号提取）/详情/快捷操作四动作/我的上报/扫码历史；dev 登录模式 | 🟢 逻辑闭环（真机联调 📋） | 原生微信小程序（测试号） | [CLAUDE.md](./miniprogram/CLAUDE.md) |
+| `deploy/` | verify.sh **15 连检**一键验收 + 三档存储形态 README + `tencent/` IaC（双活 nginx×3 + systemd + 部署实录 + **Portainer 附录**） | 🟢 生产就绪 | bash / docker-compose / nginx | [CLAUDE.md](./deploy/CLAUDE.md) |
+| `scripts/` + `.githooks/` | `next_version.sh`（V1.0.x 发布规程）· `deploy_tencent.sh`（一键部署）· `tidy_artifacts.sh` + pre-commit（**产物自动归档，hooks 已挂**） | 🟢 工具链 | bash | — |
 
-**关键文件**：[README.md](./README.md)（快速开始）· [deploy/README.md](./deploy/README.md)（存储形态切换点）· [deploy/verify.sh](./deploy/verify.sh)（验收脚本）· `backend/internal/h5/templates/`（UI 设计 token 全表）
+**关键文件**：[README.md](./README.md)（快速开始）· [deploy/README.md](./deploy/README.md)（存储三档）· [deploy/tencent/README.md](./deploy/tencent/README.md)（**部署知识库权威**）· [deploy/verify.sh](./deploy/verify.sh)（验收 15 连检）· `backend/internal/h5/templates/`（UI 设计 token 全表）
 
 ---
 
@@ -114,30 +129,32 @@ graph TD
 
 | 表 | 职责 | 关键点 |
 |---|---|---|
-| `tags` | 码表 | tag_id(PK), qr_scene, url_code, status(active/void)；**tagId 永不 recycle** |
+| `tags` | 码表 | tag_id(PK), qr_scene, url_code, status(active/void)；**tagId 永不 recycle**（物理删必致码号回池，V1.15 实证） |
 | `assets` | 资产 | tag_id(FK), name/category/model/sn/price/dept/keeper/location, status(在用/闲置/维修/借出/报废) |
 | `asset_events` | 履历快照 | 领用/归还/维修/调拨/报废/信息变更，actor + old_value→new_value(JSON) |
 | `scan_logs` | 扫码日志 | tag_id, actor, channel(weapp/h5/gun), ip |
 | `users` | 用户 | 微信 openid/unionid + 角色(admin/asset_mgr/staff) |
-| `fin_mappings` | 财务模板 | 用友U8/金蝶星空/管家婆，column_map(JSON) + fixed_rows + version |
-| `export_jobs` | 导出任务 | 资产过滤条件 + mapping_id + 文件 URL + 状态（异步） |
-| `import_batches` | 导入批次 | 文件 URL + 解析结果 + 错误行报告(JSON) + 确认状态，**支持按批次回滚** |
+| `fin_mappings` | 财务模板 | 用友U8/金蝶星空/管家婆/通用台账 ×4，column_map(JSON) + fixed_rows + version |
+| `export_jobs` | 导出任务 | 资产过滤条件 + mapping_id + 状态（导出审计留痕） |
+| `import_batches` | 导入批次 | 解析结果 + 错误行报告(JSON) + 确认状态，**支持按批次回滚** |
+| `cleanup_jobs` | 清洗审计（0004） | scan/execute/restore 三步流 + 4 表快照回补 + PG setval 序列重推 |
 
 ---
 
 ## 全局规范（关键纪律，代码落地后强制执行）
 
-1. **tagId 永不 recycle**（与沐禾 catalogue id 同纪律）：资产报废后码作废归档（status=void），码号不复用。
+1. **tagId 永不 recycle**（与沐禾 catalogue id 同纪律）：资产报废后码作废归档（status=void），码号不复用；**tags 永不物理删**（V1.15 推论落地）。
 2. **版本快照强制**：资产字段级变更全量写 `asset_events`（谁/何时/改了什么字段/旧值→新值），无旁路。
-3. **扫码性能红线 <200ms P95**：tagId→资产详情 Redis 缓存 TTL 60s，变更即失效；活码 302 走 CDN。
-4. **扫码限流**：按 openid 令牌桶防爬。
-5. **财务导出审计留痕**：记录操作人与过滤条件（财务合规）；导入必须"预览差异 → 人工确认 → 入库 → import_batch 留档"，支持按批次回滚。
+3. **扫码性能红线 <200ms P95**：tagId→资产详情 TTL 缓存 60s，变更即失效；活码 302 生产走 nginx（CDN 预留）。
+4. **扫码限流**：IP 令牌桶防爬（`RATE_LIMIT_BURST`/`RATE_LIMIT_PER_SEC`，`/t` `/h5` `/qr` 同桶），429 兜底；管理端 API 不受限流影响。
+5. **财务导出审计留痕**：记录操作人与过滤条件（财务合规）；导入必须"预览差异 → 人工确认 → 入库 → import_batch 留档"，支持按批次回滚；**导入去重默认开**（dedup=true，force 逃生口——V1.15 P1）。
 6. **一物双码**：小程序码（scene=`t:{tagId}`）+ 活码 URL 二维码并存；内容更新只改数据，码图永不重印。
-7. **格式转换收敛在映射层**：金额/日期/部门编码系统内统一存储，用友/金蝶各自的日期格式与部门编码对照由 `fin_mappings` 负责（对照表可上传）。
-8. **权限模型**：admin（全部+模板配置+用户管理）/ asset_mgr（资产 CRUD、码管理、导入导出、审批上报）/ staff（默认，扫码查看 + 领用报修上报 + 本人记录）；鉴权统一在 API 中间件。
+7. **格式转换收敛在映射层**：金额/日期/部门编码系统内统一存储，用友/金蝶对照由 `fin_mappings` 负责（对照表可上传）。
+8. **权限模型**：admin / asset_mgr / staff 三角色（当前实现 = ADMIN_PASSWORD 单管理员 + 员工 HMAC token，细粒度角色为演进项）；鉴权统一在 API 中间件。
 9. **staff 对资产只读**，只能发起 event（领用/报修等）。
 10. **快捷操作表单 ≤3 字段**：提交即写 event，员工端从简。
-11. **部署**：家庭实验室 PVE CT（deploy-ct151 模式），HTTPS；备份 = PG dump + 文件目录。
+11. **提示必须走 App.useApp()**：antd 6 × React 19 静态 message 静默（V1.15 P0 事故根源），build.sh 闸门强制。
+12. **部署**：双活腾讯云（106 主 + 118 .com），nginx TLS + Supabase PG17；备份 = PG dump（118 cron）+ Supabase 每日备份；连接形态两机不强求统一。
 
 ---
 
@@ -145,16 +162,24 @@ graph TD
 
 | 阶段 | 内容 | 出口标准 |
 |---|---|---|
-| **M1** ✅ | 后端骨架 + 资产/码表 + 活码 302 + H5 只读详情（+ 小程序扫码/详情两页提前交付 + xlsx 真实数据 74 条） | 外部扫码看到资产页 —— **已达成**（verify.sh 七连检） |
-| **M3 提前** 🔶 | 管理后台四模块（台账 CRUD / 码管理 / 批量导入 / 统计）—— 财务模板留 M4、码批量生成打印 PDF 版面 📋 未做 | 盘点可用 —— **核心达成**（进程内 e2e 14 项全绿；浏览器走查待人工） |
-| **M2 主体** 🔶 | 员工端登录（dev 模式）+ 快捷操作四动作 + 我的上报 + 扫码历史 + 302 分流可配 —— PG/Redis 切换与真机联调 📋 | 员工全流程微信内闭环 —— **逻辑链路达成**（e2e 员工链路全绿），真机待验 |
-| **M4** 🔶 | 财务模板 + 导入导出任务 + 差异预览/回滚 —— 逻辑链路已落地（e2e 五段全绿）；**用真实用友/金蝶文件各跑通一份** 📋 待人工验收 | 用友/金蝶模板各跑通一份真实数据 —— **代码达成，真实数据验收待做** |
+| **M1** ✅ | 后端骨架 + 资产/码表 + 活码 302 + H5 只读详情（+ 小程序扫码/详情两页提前交付 + xlsx 真实数据 74 条） | 外部扫码看到资产页 —— **已达成**（verify.sh 连检） |
+| **M3 提前** ✅ | 管理后台（台账 CRUD / 码管理 / 批量导入 / 统计 + 打印工场 + 表格编辑 + 财务对接 + 重复清洗） | 盘点可用 —— **达成**（e2e 全绿 + 生产 78 条实跑） |
+| **M2 主体** 🔶 | 员工端登录（dev 模式）+ 快捷操作四动作 + 我的上报 + 扫码历史 + 302 分流可配 —— **真机联调 📋 余项** | 员工全流程微信内闭环 —— 逻辑链路达成，真机待验 |
+| **M4** 🔶 | 财务模板 + 导入导出任务 + 差异预览/回滚 —— 逻辑链路落地；**用真实用友/金蝶文件各跑通一份** 📋 待人工验收 | 代码达成，真实数据验收待做 |
+
+---
+
+## 下一轮待办（已批准未实施 + 余项）
+
+1. **QR 码中心嵌 logo**（已批准，规划 [.zcf/plan/current/qr-logo.md](./.zcf/plan/current/qr-logo.md)）：logo 资产两处入库 → `internal/qr` withLogo（High 纠错+白垫+embed）→ `?logo=0` 开关 → PrintPage 默认开 → e2e 补断言 → 部署 106 公网验证。logo 原图已定位：`/Volumes/user/新素材/微信图片_20260903153544_17_1821.png`（256×256 RGBA）
+2. **M2 余项**：小程序真机联调（域名白名单配置后）
+3. **M4 余项**：真实用友/金蝶文件各跑通一份导入导出
 
 ---
 
 ## 待定问题清单（设计方案第 10 节，下一轮确认）
 
-1. **管理后台框架最终选型**：Vue3+Element Plus vs React+AntD——二选一后钉死（沐禾 frontend 为 React，复用经验有优势）。
+1. ~~**管理后台框架最终选型**~~ —— 已关闭（V1.2 钉死 React+AntD）。
 2. **是否需要离线盘点模式**：无网仓库批量扫码，回网同步。
 3. **资产是否需对接现有 OA/钉钉**：领用审批流。
 
@@ -163,11 +188,13 @@ graph TD
 ## AI 使用指引
 
 1. **一切以设计方案为准**：动手前先读 [MuTag-项目设计方案.md](./MuTag-项目设计方案.md)；本文档是其 AI 上下文提炼，两者冲突时以设计方案为准。
-2. **M1 代码已存在**：`backend/`、`miniprogram/`、`deploy/`、`admin-web/` 均为实态，改代码前先读对应模块
-3. **构建环境特殊性**：本机沙箱代理拦截 Go proxy，离线构建用 `GOFLAGS="-mod=mod -buildvcs=false" GOPROXY=off GOSUMDB=off`（依赖走模块缓存）；在线环境正常 `go mod tidy`。本地端口绑定被沙箱禁，起服务/验收用 `!` 前缀在会话外跑（verify.sh）。
-4. **存储双形态**：改 SQL/存储层时注意 SQLite（开发）与 PG（上线）方言双轨，迁移文件按方言各自维护于 `internal/db/migrations/`。
-5. **仓库已发布 GitHub**：`github.com/changzhi777/MuTag`（公开）；日常开发 commit + push 到 main；沙箱内 gh/git 走 TLS MITM 不可用，远端操作用 `!` 前缀在会话外跑
-6. `.spec-workflow/` 为 spec-workflow MCP 工具模板，仅用于规格流程，不是项目代码。
+2. **改代码前先读模块详档**：[backend](./backend/CLAUDE.md) / [admin-web](./admin-web/CLAUDE.md) / [miniprogram](./miniprogram/CLAUDE.md) / [deploy](./deploy/CLAUDE.md)——接口全景、双形态存储、闸门语义都在里面。
+3. **构建环境特殊性**：本机沙箱代理拦截 Go proxy，离线构建用 `GOFLAGS="-mod=mod -buildvcs=false" GOPROXY=off GOSUMDB=off`（依赖走模块缓存）；本地端口绑定被沙箱禁，起服务/验收用 `!` 前缀在会话外跑（verify.sh）。
+4. **存储双形态**：改 SQL/存储层时注意 SQLite（开发）与 PG（上线）方言双轨，迁移文件按方言各自维护于 `internal/db/migrations/`（`.pg.` 中缀独立版本线）。
+5. **仓库已发布 GitHub**：`github.com/changzhi777/MuTag`（公开）；日常开发 commit + push 到 main；提交会触发 `.githooks/pre-commit` 自动归档根目录散落截图/快照（正式产物不受影响）；沙箱内 gh/git 走 TLS MITM 不可用，远端操作用 `!` 前缀在会话外跑。
+6. **运维通道**：SSH 22 被本机 Clash TUN 掐断 → OrcaTerm 网页终端（Playwright MCP 有腾讯云登录态可自主操作）；部署先读 [deploy/tencent/README.md](./deploy/tencent/README.md)。
+7. **qr-logo 是待办不是已完成**：实施前先读规划并按其步骤走（含 `?logo=0` 开关与 e2e 断言），勿重复实施。
+8. `.spec-workflow/` 为 spec-workflow MCP 工具模板，仅用于规格流程，不是项目代码。
 
 ---
 
@@ -175,5 +202,8 @@ graph TD
 
 - [MuTag-项目设计方案.md](./MuTag-项目设计方案.md) — 唯一事实来源（v0.1，2026-11-16）
 - [README.md](./README.md) — 快速开始与开发约束
-- [deploy/verify.sh](./deploy/verify.sh) — 一键验收（七连检）
-- [.claude/index.json](./.claude/index.json) — 基座级扫描索引（v1.0.0，规划态；待随 V1.1 增量）
+- [backend/CLAUDE.md](./backend/CLAUDE.md) · [admin-web/CLAUDE.md](./admin-web/CLAUDE.md) · [miniprogram/CLAUDE.md](./miniprogram/CLAUDE.md) · [deploy/CLAUDE.md](./deploy/CLAUDE.md) — 四模块详档（V1.16 首建）
+- [deploy/tencent/README.md](./deploy/tencent/README.md) — 部署知识库（双活实录 + Portainer 附录）
+- [.zcf/plan/current/qr-logo.md](./.zcf/plan/current/qr-logo.md) — 下一轮待办：QR 中心嵌 logo（已批准未实施）
+- [.zcf/plan/current/db-kit-connections.md](./.zcf/plan/current/db-kit-connections.md) — DB Kit 连接配置总表（14 条）
+- [.claude/index.json](./.claude/index.json) — 扫描索引（v1.5.0，2026-11-18）
