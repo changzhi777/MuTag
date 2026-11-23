@@ -3,3 +3,6 @@ node_modules/
 android/
 ios/
 *.log
+.gradle-home/
+*.apk
+android/app/build/

@@ -1,5 +1,7 @@
-// 扫码页：vision-camera V5 MLKit CodeScanner + 手动输入编号。
-// 识别活码 URL（…/t/{code}）或裸编号（MT-…）→ 统一跳 WebView 详情页（/t/{code} 由分流器 302 到 H5，扫码统计入 scan_logs）。
+// 扫码页：vision-camera V5 + barcode-scanner 扩展（MLKit）。
+// 用 useBarcodeScannerOutput + <Camera> 组合（不用现成 <CodeScanner> 组件——
+// 其 device 为 null 时直接 throw，首帧未就绪会崩；自行判空保手动输入兜底可用）。
+// 识别活码 URL（…/t/{code}）或裸编号（MT-…）→ 统一跳 WebView 详情页（分流器 302 → H5，扫码统计入 scan_logs）。
 import React, { useState } from 'react';
 import {
   View,
@@ -7,10 +9,10 @@ import {
   TextInput,
   Pressable,
   StyleSheet,
-  Linking,
   Alert,
 } from 'react-native';
-import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
+import { Camera, useCameraDevice } from 'react-native-vision-camera';
+import { useBarcodeScannerOutput } from 'react-native-vision-camera-barcode-scanner';
 import { useFocusEffect } from '@react-navigation/native';
 import { BASE_URL, TAG_ID_RE, normalizeTagInput } from '../constants';
 
@@ -38,17 +40,16 @@ export default function ScanScreen({ navigation }: any) {
 
   const openCode = (code: string) => {
     setCameraActive(false);
-    // 统一走活码分流器：WebView 内 302 → H5 详情，scan_logs 统计对齐（纪律 4/扫码计数）
+    // 统一走活码分流器：WebView 内 302 → H5 详情，scan_logs 统计对齐
     navigation.navigate('Detail', { url: `${BASE_URL}/t/${code}` });
   };
 
-  const codeScanner = useCodeScanner({
-    codeTypes: ['qr'],
-    onCodeScanned: (codes) => {
+  const scannerOutput = useBarcodeScannerOutput({
+    barcodeFormats: ['qr-code'],
+    onBarcodeScanned(barcodes) {
       if (!cameraActive) return;
-      for (const c of codes) {
-        const v = c.value ?? '';
-        const code = extractCode(v);
+      for (const b of barcodes) {
+        const code = extractCode(b.rawValue ?? '');
         if (code) {
           // 防连扫：命中即休眠相机再跳页
           setCameraActive(false);
@@ -56,6 +57,10 @@ export default function ScanScreen({ navigation }: any) {
           break;
         }
       }
+    },
+    onError(error) {
+      // 扫码管线错误仅记日志，不打断手动输入兜底通道
+      console.warn('[scan] barcode scanner error:', error);
     },
   });
 
@@ -68,7 +73,7 @@ export default function ScanScreen({ navigation }: any) {
     openCode(code);
   };
 
-  // 权限被拒或无相机时保留手动输入通道
+  // 权限被拒或设备未就绪时保留手动输入通道
   const cameraReady = device != null && cameraActive;
 
   return (
@@ -79,10 +84,10 @@ export default function ScanScreen({ navigation }: any) {
             style={StyleSheet.absoluteFill}
             device={device}
             isActive
-            codeScanner={codeScanner}
+            outputs={[scannerOutput]}
           />
         ) : (
-          <View style={[StyleSheet.absoluteFill, S.camFallback]}>
+          <View style={[S.camFallback, S.camFallbackPos]}>
             <Text style={S.camFallbackText}>
               {device == null ? '未检测到相机设备' : '相机已暂停'}
             </Text>
@@ -125,11 +130,25 @@ export default function ScanScreen({ navigation }: any) {
 const S = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0b1220' },
   cameraBox: { flex: 2, overflow: 'hidden', backgroundColor: '#111827' },
-  camFallback: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111827' },
+  camFallback: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#111827',
+  },
+  camFallbackPos: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
   camFallbackText: { color: '#9ca3af', marginBottom: 12 },
   resumeBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: '#0D9488' },
   resumeText: { color: '#fff' },
-  frameBox: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  frameBox: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   frame: { width: 240, height: 240, borderWidth: 2, borderColor: 'rgba(13,148,136,0.9)', borderRadius: 16 },
   hintWrap: { paddingVertical: 10, alignItems: 'center' },
   hint: { color: '#9ca3af', fontSize: 13 },

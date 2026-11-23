@@ -1,7 +1,7 @@
 // 详情页：WebView 加载活码 URL（/t/{code} 302 → H5 详情，与浏览器同页同源）。
 // 返回键回扫码页继续扫；Linking 外链交给系统浏览器（避免 WebView 内嵌套跳转）。
 import React from 'react';
-import { StyleSheet, Pressable, Text, BackHandler } from 'react-native';
+import { View, StyleSheet, Pressable, Text, BackHandler } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useNavigation } from '@react-navigation/native';
 
