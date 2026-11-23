@@ -1,7 +1,7 @@
 # MuTag（青沐动态码）· 企业资产活码管理小程序 — AI 上下文文档
 
 > 代号：**MuTag** ｜ 版本：**V1.18（青沐码 Android APK 落地轮）** ｜ 更新时间：2026-11-23 23:06 (CST)
-> 发布版本规程：**V1.0.x 第 3 位递增**（当前发布版 **V1.0.4**）——`sh scripts/next_version.sh calc patch` 算号 / `apply patch` 一条命令全自动（三件套+commit+tag+push，脏工作区拒绝）；发布版（git tag/CHANGELOG.md）与本文档 changelog（AI 上下文文档演进线 V1.x）是两条线
+> 发布版本规程：**V1.0.x 第 3 位递增**（当前发布版 **V1.0.5**）——`sh scripts/next_version.sh calc patch` 算号 / `apply patch` 一条命令全自动（三件套+commit+tag+push，脏工作区拒绝）；发布版（git tag/CHANGELOG.md）与本文档 changelog（AI 上下文文档演进线 V1.x）是两条线
 > 维护：init-architect 首轮 + /zcf:workflow 增量 · 配套索引：[.claude/index.json](./.claude/index.json)
 > 唯一事实来源：[MuTag-项目设计方案.md](./MuTag-项目设计方案.md)（v0.1，2026-11-16）——本文档全部内容提炼自它，冲突时以设计方案为准
 
