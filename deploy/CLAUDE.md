@@ -72,7 +72,7 @@
 2. **DNSPod 改记录不生效？** 单条「添加记录」UI 不推权威（NXDOMAIN 等 10 分钟）——走批量操作通道（txt 导入/批量修改）秒推。
 3. **106 连不上 Supabase？** 无 IPv6 出口连不上 db. 直连，必须 session pooler :5432 + simple protocol；118 反之走直连。
 4. **skip2/go-qrcode 部署拉不动？** 无 git tag：pseudo-version 从 goproxy `@latest` 取真值；alpine 缺 git 用 `docker.1ms.run/golang:1.26` 跑 tidy；go.sum 已入库（权威记录比对锚定）。
-5. **118 SSH 通道（2026-11-24 修复）**：sshd 听 **22222**（22 跨境被 GFW RST 的有意替代，云防火墙仅放 22222）——`ssh mutag` 已通（本机别名加了 `Port 22222`）；go 需 `export PATH=$PATH:/usr/local/go/bin`。Clash 掐 22 的历史症状与 GFW RST 叠加，勿再误判。qr-logo 已 V1.17 双机落地。
+5. **118 SSH 通道（2026-11-24 修复）**：sshd 听 **22222**（22 跨境被 GFW RST 的有意替代，云防火墙仅放 22222）——`ssh mutag` 已通（本机别名加了 `Port 22222`）；go 需 `export PATH=$PATH:/usr/local/go/bin`。qr-logo 已 V1.17 双机落地。另：106 nginx 已加 `/apk/` APK 分发通道（手机浏览器直下，发新包须 scp 覆盖 `/opt/mutag/apk/`）。
 
 ## 相关文件清单
 

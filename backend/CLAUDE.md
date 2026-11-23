@@ -16,6 +16,7 @@
 | 2026-11-18 | V1.0 | 🆕 本模块 CLAUDE.md 首建（init-architect V1.16）：接口全景 / 双形态存储 / 21 测试函数清点入档；qr-logo（`internal/qr` withLogo 升级）登记为待办未实施 |
 | 2026-11-23 | V1.18 | scanChannel 扩 **app 渠道**（`resolve.go`：UA 嗅探 `QingMuApp`——mobile APK WebView 后缀标识；微信 MicroMessenger 优先，TestScanChannel 补 app/双标识两断言，全量回归绿）。qr-logo 待办已于 V1.17 全落地（FAQ 第 5 条同步修正） |
 | 2026-11-24 | V1.18 | **0005 迁移修复 APK 扫码静默丢失**：双方言 scan_logs.channel CHECK 白名单 ('weapp','h5','gun') 拒 'app' → 分流器 Insert 被 `_ =` 吞错，部署当日起 APK 扫码全丢；resolve.go Insert 失败改 log.Printf 留痕；106 scp 单文件部署 + 容器启动自动迁移，psql 终验 channel=app 落库 ✓。教训：**渠道枚举代码与 DB CHECK 分离，加渠道必须同步 0005 类迁移** |
+| 2026-11-24 | V1.19 | **资产模型增强（0006）+ 多管理员（0007）**：assets 扩列（parent_tag_id/qty/brand/keeper_phone/warranty_until/lat/lng/located_at）+ locations 两级树表 + /api/admin/locations CRUD（删引用校验/三级 400）；H5 详情展示所有信息（位置路径/所属设备/部件清单×qty）；0007 admins 表 + 登录双轨（username→admins / 空→ADMIN_PASSWORD）+ token 带用户名（exp.username.sig）+ ADMIN_SEED 播种（106 播 zc:张晨）；履历 Actor 换真实账号；e2e TestE2EAssetHierarchy；双方言生产迁移完成 |
 
 ---
 
