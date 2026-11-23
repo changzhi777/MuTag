@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -56,8 +57,11 @@ func resolve(d Deps) gin.HandlerFunc {
 			return
 		}
 
-		// 扫码留痕（失败不阻断分流）
-		_ = d.Store.ScanLogs().Insert(ctx, tagID, "", scanChannel(ua), c.ClientIP(), ua)
+		// 扫码留痕（失败不阻断分流，但必须留日志——0005 前渠道 CHECK 拒绝 app 曾静默丢数据一周）
+		ch := scanChannel(ua)
+		if err := d.Store.ScanLogs().Insert(ctx, tagID, "", ch, c.ClientIP(), ua); err != nil {
+			log.Printf("[scan] insert scan_log failed: tagID=%s channel=%s err=%v", tagID, ch, err)
+		}
 
 		// M2 起配置 WEAPP_JUMP_URL 后，微信内扫码切小程序唤起
 		target := resolveTarget(ua, "/h5/t/"+tagID, d.WeappJumpURL)
