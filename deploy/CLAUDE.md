@@ -72,7 +72,7 @@
 2. **DNSPod 改记录不生效？** 单条「添加记录」UI 不推权威（NXDOMAIN 等 10 分钟）——走批量操作通道（txt 导入/批量修改）秒推。
 3. **106 连不上 Supabase？** 无 IPv6 出口连不上 db. 直连，必须 session pooler :5432 + simple protocol；118 反之走直连。
 4. **skip2/go-qrcode 部署拉不动？** 无 git tag：pseudo-version 从 goproxy `@latest` 取真值；alpine 缺 git 用 `docker.1ms.run/golang:1.26` 跑 tidy；go.sum 已入库（权威记录比对锚定）。
-5. **待办（已批准未实施）**：qr-logo 上线 106（标准构建链，go.sum 已就位；公网验证 bytes 增大）。规划见 `../.zcf/plan/current/qr-logo.md`。
+5. **118 运维通道（2026-11-24）**：SSH 22 Connection refused（非 Clash——sshd 未监听或控制台防火墙变更，待查）→ **仅 OrcaTerm**；工作区已对齐 origin/main（分叉三 commit 留 backup-118-fork 分支备查）；go 需 `export PATH=$PATH:/usr/local/go/bin`。qr-logo 已 V1.17 双机落地（FAQ 此前过时条已清）。
 
 ## 相关文件清单
 

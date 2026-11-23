@@ -19,11 +19,11 @@ DNS: mutag.qingmulife.cn A → 106.53.168.73（TTL 600，DNSPod 权威 subway/am
   `docker rm -f mutag && docker run -d --name mutag --restart always -p 127.0.0.1:18000:8080 -v /opt/mutag/data:/app/data -e SQLITE_PATH=/app/data/mutag.db --env-file /opt/mutag/mutag.env mutag:latest`
 - nginx conf 归档：[mutag-gz106.nginx.conf](./mutag-gz106.nginx.conf)（与线上一致）
 
-## 香港待机（118 · lhins-42zqxraf · systemd 二进制形态 · 2026-11-17 已停）
+## 香港待机（118 · lhins-42zqxraf · systemd 二进制形态 · 2026-11-24 已同步最新）
 
-**mutag 服务已 stop + disable**（用户裁定；`inactive/disabled`、18000 已释放）——二进制/env/unit/nginx conf 全部保留在位，回滚一条命令：`systemctl enable --now mutag`。
+**实态（2026-11-24）**：mutag 服务 **active**（此前 stop+disable 的裁定已被后续操作恢复——V1.17 qr-logo 公网验证即经此机）；工作区已 `git reset --hard origin/main` 对齐 `75d4306`，go build（`/usr/local/go/bin/go`，PATH 未含需 export）+ restart 完成，公网三验过（healthz / APK-UA 302 / QR logo 10926 字节）。**分叉遗留**：V1.14 时期在 118 本地直接 commit 过三个改动（根路径落地页/NoRoute 兜底等，未进 GitHub），内容已被主线完整包含，reset 前已留 `backup-118-fork` 分支于 118 本地备查。⚠️ **SSH 22 Connection refused**（2026-11-24 实测，非 Clash 掐——sshd 未监听或控制台防火墙变更），运维通道当前**仅 OrcaTerm**（控制台实例卡片「登录」，Playwright MCP 可自主操作）。
 BASE_URL 亦为 .cn；nginx `.cn` conf 见 [mutag-cn.nginx.conf](./mutag-cn.nginx.conf)（DNS 已不指向 118）。
-更新发布（118）：`ssh mutag` 或 OrcaTerm → `cd /opt/mutag/src && git pull && cd backend && GOFLAGS="-mod=mod -buildvcs=false" go build -ldflags "-s -w" -o /opt/mutag/mutag ./cmd/server && systemctl restart mutag`
+更新发布（118）：OrcaTerm → `cd /opt/mutag/src && git fetch origin && git reset --hard origin/main && export PATH=$PATH:/usr/local/go/bin && cd backend && GOFLAGS="-mod=mod -buildvcs=false" go build -ldflags "-s -w" -o /opt/mutag/mutag ./cmd/server && systemctl restart mutag`
 
 ## 目录（香港 118 · 统一保存裁决）
 
