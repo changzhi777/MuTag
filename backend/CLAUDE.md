@@ -15,6 +15,7 @@
 | 2026-11-17 | — | V1.11 扫码统计 `/tags/scan-stats` → V1.12 `/api/admin/config` 下发 BASE_URL → V1.14 服务端 QR 端点 `/qr/:urlCode` 上线（skip2/go-qrcode，106 容器实证 + 公网 200 实测；go.sum 欠账清偿）→ V1.15 cleanup 域（0004 迁移 + scan/execute/restore 三步流）+ dedupe 导入去重（precheck/dedup 默认 true） |
 | 2026-11-18 | V1.0 | 🆕 本模块 CLAUDE.md 首建（init-architect V1.16）：接口全景 / 双形态存储 / 21 测试函数清点入档；qr-logo（`internal/qr` withLogo 升级）登记为待办未实施 |
 | 2026-11-23 | V1.18 | scanChannel 扩 **app 渠道**（`resolve.go`：UA 嗅探 `QingMuApp`——mobile APK WebView 后缀标识；微信 MicroMessenger 优先，TestScanChannel 补 app/双标识两断言，全量回归绿）。qr-logo 待办已于 V1.17 全落地（FAQ 第 5 条同步修正） |
+| 2026-11-24 | V1.18 | **0005 迁移修复 APK 扫码静默丢失**：双方言 scan_logs.channel CHECK 白名单 ('weapp','h5','gun') 拒 'app' → 分流器 Insert 被 `_ =` 吞错，部署当日起 APK 扫码全丢；resolve.go Insert 失败改 log.Printf 留痕；106 scp 单文件部署 + 容器启动自动迁移，psql 终验 channel=app 落库 ✓。教训：**渠道枚举代码与 DB CHECK 分离，加渠道必须同步 0005 类迁移** |
 
 ---
 
@@ -123,7 +124,7 @@ e2e 为**进程内**集成测试（net/http/httptest 起 router，绕沙箱端�
 2. **skip2/go-qrcode 依赖拉不动？** 无 git tag；go.sum 双哈希已入库（2026-11-17 与 sum.golang.org 权威记录比对锚定）。alpine 容器缺 git 跑不动 tidy → 用 `docker.1ms.run/golang:1.26`（Debian 自带 git）。
 3. **Supabase pooler 报 42P05/3F000？** simple protocol 已强制（OpenPostgres 自动追加）；生产推荐 db.<ref>:5432 直连（118 形态）；106 无 IPv6 出口走 session pooler :5432——两形态并存不强求统一。
 4. **物理删 tags 会怎样？** 码号回池（nextTagID=MAX+1 实证）——纪律 1 禁止，一律置 void。
-5. **`/t` 分流渠道归类（V1.18）**：`scanChannel` 按 UA 嗅探——`MicroMessenger` → weapp（优先级最高）、`QingMuApp`（mobile APK WebView 后缀）→ app、其余 → h5；新增渠道只改此纯函数 + TestScanChannel 断言。
+5. **`/t` 分流渠道归类（V1.18）**：`scanChannel` 按 UA 嗅探——`MicroMessenger` → weapp（优先级最高）、`QingMuApp`（mobile APK WebView 后缀）→ app、其余 → h5；**新增渠道要动三处**：此纯函数 + TestScanChannel 断言 + **双方言 CHECK 约束迁移**（0005 先例——漏迁移则 Insert 静默失败，现已有日志留痕）。
 
 ## 相关文件清单
 

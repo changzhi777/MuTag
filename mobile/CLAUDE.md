@@ -1,6 +1,6 @@
 # mobile/ · 青沐码 Android APK（RN）— 模块文档
 
-> 上级：[根 CLAUDE.md](../CLAUDE.md) ｜ 首建：V1.18（2026-11-23）｜ 实态：**APK 已出包（40MB · arm64-v8a 单架构 · V2 debug 签名，真机待验 📋）**
+> 上级：[根 CLAUDE.md](../CLAUDE.md) ｜ 首建：V1.18（2026-11-23）｜ 实态：**APK 已出包（40MB · arm64-v8a · V2 debug 签名）· 真机验收 ✅ 通过（2026-11-24）· 后端 channel=app 链路已部署验证**
 
 ---
 
@@ -68,6 +68,6 @@ cd android && ./gradlew assembleRelease
 
 ## 待办 / 余项
 
-- **真机验收** 📋：装 APK → 扫真实活码（MT-2026-000001）→ WebView 详情页 + 扫码计数入 scan_logs（channel=app）→ 手动输入通道 → 返回再扫；**UA 渠道标识改动后需重跑 assembleRelease 出包**
+- ~~真机验收~~ ✅ **2026-11-24 通过**：装包 → 扫真实活码 → WebView 详情 → 返回再扫 → 手动输入通道全过；后端 channel=app 已随 0005 迁移部署 106（psql 终验落库 channel=app）
 - **正式签名**：内部测试 debug keystore 够用；对外分发前生成正式 keystore 并配 signingConfig
 - **logo 闪屏统一**：splash 目前纯 logo 白底，可对齐 admin-web 品牌样式
