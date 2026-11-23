@@ -21,16 +21,54 @@
   <section class="card">
     <h2 class="sec-title">基本信息</h2>
     <dl class="kv-list">
-      {{if .Asset.BuyDate}}<div class="kv"><dt>采购日期</dt><dd>{{fmtDateT .Asset.BuyDate}}</dd></div>{{end}}
-      {{if nz .Asset.Unit}}<div class="kv"><dt>单位</dt><dd>{{.Asset.Unit}}</dd></div>{{end}}
-      {{if nz .Asset.Keeper}}<div class="kv"><dt>保管人</dt><dd>{{.Asset.Keeper}}</dd></div>{{end}}
+      {{if nz .Asset.Category}}<div class="kv"><dt>分类</dt><dd>{{.Asset.Category}}</dd></div>{{end}}
+      {{if nz .Asset.Brand}}<div class="kv"><dt>品牌</dt><dd>{{.Asset.Brand}}</dd></div>{{end}}
       {{if nz .Asset.Model}}<div class="kv"><dt>型号</dt><dd>{{.Asset.Model}}</dd></div>{{end}}
       {{if nz .Asset.Sn}}<div class="kv"><dt>SN</dt><dd class="mono">{{.Asset.Sn}}</dd></div>{{end}}
+      {{if nz .Asset.DeptID}}<div class="kv"><dt>部门</dt><dd>{{.Asset.DeptID}}</dd></div>{{end}}
+      {{if .Asset.BuyDate}}<div class="kv"><dt>采购日期</dt><dd>{{fmtDateT .Asset.BuyDate}}</dd></div>{{end}}
       {{if .Asset.Price}}<div class="kv"><dt>价格</dt><dd>{{fmtMoney .Asset.Price}}</dd></div>{{end}}
-      {{if nz .Asset.Location}}<div class="kv"><dt>位置</dt><dd>{{.Asset.Location}}</dd></div>{{end}}
+      {{if nz .Asset.Unit}}<div class="kv"><dt>单位</dt><dd>{{.Asset.Unit}}</dd></div>{{end}}
+      {{if gt .Asset.Qty 1}}<div class="kv"><dt>数量</dt><dd>{{.Asset.Qty}}</dd></div>{{end}}
+      {{if nz .Asset.Keeper}}<div class="kv"><dt>保管人</dt><dd>{{.Asset.Keeper}}</dd></div>{{end}}
+      {{if nz .Asset.KeeperPhone}}<div class="kv"><dt>保管人电话</dt><dd class="mono">{{.Asset.KeeperPhone}}</dd></div>{{end}}
+      {{if nz .Asset.ParentTagID}}<div class="kv"><dt>所属设备码号</dt><dd class="mono">{{.Asset.ParentTagID}}</dd></div>{{end}}
+      {{if .LocPath}}<div class="kv"><dt>安装位置</dt><dd>{{.LocPath}}</dd></div>{{end}}
+      {{if nz .Asset.Location}}<div class="kv"><dt>位置（历史记录）</dt><dd>{{.Asset.Location}}</dd></div>{{end}}
+      {{if .Asset.WarrantyEnd}}<div class="kv"><dt>保修到期</dt><dd>{{fmtDateT .Asset.WarrantyEnd}}</dd></div>{{end}}
+      {{if .Asset.WarrantyUntil}}<div class="kv"><dt>维保到期</dt><dd>{{fmtDateT .Asset.WarrantyUntil}}</dd></div>{{end}}
+      {{if .Asset.Lat}}<div class="kv"><dt>最近定位</dt><dd class="mono">{{printf "%.6f, %.6f" (derefF .Asset.Lat) (derefF .Asset.Lng)}}{{if .Asset.LocatedAt}}（{{.Asset.LocatedAt}}）{{end}}</dd></div>{{end}}
       {{if nz .Asset.Remark}}<div class="kv"><dt>备注</dt><dd>{{.Asset.Remark}}</dd></div>{{end}}
     </dl>
   </section>
+
+  {{if .ParentName}}
+  <section class="card">
+    <h2 class="sec-title">所属设备</h2>
+    <div class="kv"><dt>挂载于</dt><dd>{{.ParentName}}{{if nz .Asset.ParentTagID}}（<span class="mono">{{.Asset.ParentTagID}}</span>）{{end}}</dd></div>
+  </section>
+  {{end}}
+
+  {{if .Children}}
+  <section class="card">
+    <h2 class="sec-title">部件清单</h2>
+    <ol class="tl" aria-label="部件清单">
+      {{range .Children}}
+      <li class="tl__item ev-other">
+        <span class="tl__dot" aria-hidden="true"></span>
+        <div class="tl__body">
+          <div class="tl__line">
+            <span class="chip ev-other">部件</span>
+            <strong>{{.Name}}</strong>
+            {{if gt .Qty 1}}<span class="tl__actor">×{{.Qty}}</span>{{end}}
+          </div>
+          <div class="tl__note mono">{{.TagID}}{{if nz .Brand}} · {{.Brand}}{{end}}{{if nz .Model}} · {{.Model}}{{end}}{{if .BuyDate}} · {{fmtDateT .BuyDate}}{{end}}</div>
+        </div>
+      </li>
+      {{end}}
+    </ol>
+  </section>
+  {{end}}
 
   <section class="card">
     <h2 class="sec-title">资产履历</h2>

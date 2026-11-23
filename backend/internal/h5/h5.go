@@ -26,7 +26,8 @@ func mustServe(c *gin.Context, status int) {
 
 // DetailHandler GET /h5/t/:tagID —— 只读详情页。
 // 语义：码不存在 → 404「二维码无效」；码已作废(void) → 200「该资产码已作废」。
-func (r *Renderer) DetailHandler(tags *repo.TagRepo, assets *repo.AssetRepo, events *repo.EventRepo) gin.HandlerFunc {
+// 0006 增强：两级位置路径 + 所属设备（部件视角）+ 部件清单（设备视角）。
+func (r *Renderer) DetailHandler(tags *repo.TagRepo, assets *repo.AssetRepo, events *repo.EventRepo, locations *repo.LocationRepo) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 		tagID := c.Param("tagID")
@@ -64,12 +65,50 @@ func (r *Renderer) DetailHandler(tags *repo.TagRepo, assets *repo.AssetRepo, eve
 			eventList = nil // 履历查询失败不阻断详情渲染
 		}
 
+		// 位置两级路径："区域 → 点位"（location_id 优先，回退旧文本 location）
+		locPath := derefStr(asset.Location)
+		if asset.LocationID != nil {
+			if spot, err := locations.Get(ctx, *asset.LocationID); err == nil {
+				if spot.ParentID != nil {
+					if zone, err := locations.Get(ctx, *spot.ParentID); err == nil {
+						locPath = zone.Name + " → " + spot.Name
+					} else {
+						locPath = spot.Name
+					}
+				} else {
+					locPath = spot.Name
+				}
+			}
+		}
+
+		// 部件清单（扫设备码）：parent_tag_id 指向本资产的部件
+		children, _ := assets.ListByParent(ctx, asset.TagID)
+
+		// 所属设备（扫部件码）
+		parentName := ""
+		if asset.ParentTagID != nil {
+			if p, err := assets.GetByTagID(ctx, *asset.ParentTagID); err == nil {
+				parentName = p.Name
+			}
+		}
+
 		mustServe(c, http.StatusOK)
 		_ = r.tpl.ExecuteTemplate(c.Writer, "detail.html", map[string]any{
-			"Asset":  asset,
-			"Events": eventList,
+			"Asset":      asset,
+			"Events":     eventList,
+			"LocPath":    locPath,
+			"Children":   children,
+			"ParentName": parentName,
 		})
 	}
+}
+
+// derefStr *string → string（nil → 空串）。
+func derefStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 // HomeHandler GET / —— 根路径落地页（品牌 + 后台入口 + 员工扫码提示）。
@@ -112,6 +151,7 @@ func NewRenderer() (*Renderer, error) {
 		"fmtEventT":   fmtEventT,
 		"fmtRFC3339":  fmtRFC3339,
 		"nz":          nz,
+		"derefF":      derefF,
 	}).ParseFS(files, "templates/*.html")
 	if err != nil {
 		return nil, err
@@ -122,6 +162,14 @@ func NewRenderer() (*Renderer, error) {
 // nz 指针字符串非 nil 且非空白（KV 空值行隐藏判定）。
 func nz(s *string) bool {
 	return s != nil && strings.TrimSpace(*s) != ""
+}
+
+// derefF *float64 → float64（模板中解引用坐标；nil → 0）。
+func derefF(f *float64) float64 {
+	if f == nil {
+		return 0
+	}
+	return *f
 }
 
 // statusClass 资产状态 → CSS 类名（设计 token：st-*）。

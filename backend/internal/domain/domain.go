@@ -33,6 +33,8 @@ const (
 )
 
 // Asset 资产实体，一物一码（tag_id 唯一绑定）。
+// 部件模型：parent_tag_id 非空 = 该资产是 parent 下的部件（部件也是一条资产，自带码可独立扫码/履历）；
+// 多件部件按采购批次各建一条记录，qty 记录该批次数量。
 type Asset struct {
 	AssetID     int64       `json:"asset_id"`
 	TagID       string      `json:"tag_id"`
@@ -44,13 +46,44 @@ type Asset struct {
 	Price       *float64    `json:"price"`
 	DeptID      *string     `json:"dept_id"`
 	Keeper      *string     `json:"keeper"`
-	Location    *string     `json:"location"`
+	Location    *string     `json:"location"` // 旧自由文本位置（历史兼容，展示优先取位置树）
 	Status      AssetStatus `json:"status"`
 	Unit        *string     `json:"unit"`
 	WarrantyEnd *time.Time  `json:"warranty_end"`
 	Remark      *string     `json:"remark"`
 	CreatedAt   time.Time   `json:"created_at"`
 	UpdatedAt   time.Time   `json:"updated_at"`
+
+	// 0006 增强：部件层级 / 二级位置 / 定位预留 / 扩展属性
+	ParentTagID  *string  `json:"parent_tag_id"`            // 所属设备 tag_id（NULL=独立资产/设备本体）
+	LocationID   *int64   `json:"location_id"`              // 安装位置（locations 两级树叶子/区域）
+	Qty          int      `json:"qty"`                      // 数量（部件按采购批次各一条，默认 1）
+	Brand        *string  `json:"brand"`                    // 品牌
+	KeeperPhone  *string  `json:"keeper_phone"`             // 保管人电话
+	WarrantyUntil *time.Time `json:"warranty_until"`        // 维保到期日
+	Lat          *float64 `json:"lat"`                      // 最近定位纬度（动态定位预留）
+	Lng          *float64 `json:"lng"`                      // 最近定位经度
+	LocatedAt    *string  `json:"located_at"`               // 最近定位时间
+}
+
+// Location 两级位置树节点：parent_id 为空 = 一级（区域），非空 = 二级（点位）。
+// lat/lng 为该位置的静态安装坐标（定位功能预留）。
+type Location struct {
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	ParentID  *int64    `json:"parent_id"`
+	Lat       *float64  `json:"lat"`
+	Lng       *float64  `json:"lng"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// Admin 后台管理员（0007 多管理员；password_hash 格式 sha256$<salt-hex>$<hash-hex>）。
+type Admin struct {
+	ID           int64     `json:"id"`
+	Username     string    `json:"username"`
+	PasswordHash string    `json:"-"`
+	DisplayName  string    `json:"display_name"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 // EventType 履历类型。

@@ -13,7 +13,8 @@ type AssetRepo struct {
 }
 
 const assetCols = `asset_id, tag_id, name, category, model, sn, buy_date, price,
-	dept_id, keeper, location, status, unit, warranty_end, remark, created_at, updated_at`
+	dept_id, keeper, location, status, unit, warranty_end, remark, created_at, updated_at,
+	parent_tag_id, location_id, qty, brand, keeper_phone, warranty_until, lat, lng, located_at`
 
 // GetByTagID 按绑定码取资产。
 func (r *AssetRepo) GetByTagID(ctx context.Context, tagID string) (*domain.Asset, error) {
@@ -32,12 +33,15 @@ func (r *AssetRepo) Create(ctx context.Context, a *domain.Asset) (int64, error) 
 	var id int64
 	err := r.db.QueryRowContext(ctx,
 		`INSERT INTO assets (tag_id, name, category, model, sn, buy_date, price,
-			dept_id, keeper, location, status, unit, warranty_end, remark, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			dept_id, keeper, location, status, unit, warranty_end, remark, created_at, updated_at,
+			parent_tag_id, location_id, qty, brand, keeper_phone, warranty_until, lat, lng, located_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		 RETURNING asset_id`,
 		a.TagID, a.Name, a.Category, a.Model, a.Sn, dateToText(a.BuyDate), a.Price,
 		a.DeptID, a.Keeper, a.Location, a.Status, a.Unit, dateToText(a.WarrantyEnd), a.Remark,
-		now, now).Scan(&id)
+		now, now,
+		a.ParentTagID, a.LocationID, a.Qty, a.Brand, a.KeeperPhone,
+		dateToText(a.WarrantyUntil), a.Lat, a.Lng, a.LocatedAt).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -132,12 +136,36 @@ func (r *AssetRepo) Update(ctx context.Context, a *domain.Asset) error {
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE assets SET name=?, category=?, model=?, sn=?, buy_date=?, price=?,
 		 dept_id=?, keeper=?, location=?, status=?, unit=?, warranty_end=?, remark=?,
+		 parent_tag_id=?, location_id=?, qty=?, brand=?, keeper_phone=?, warranty_until=?,
+		 lat=?, lng=?, located_at=?,
 		 updated_at=?
 		 WHERE tag_id=?`,
 		a.Name, a.Category, a.Model, a.Sn, dateToText(a.BuyDate), a.Price,
 		a.DeptID, a.Keeper, a.Location, a.Status, a.Unit, dateToText(a.WarrantyEnd), a.Remark,
+		a.ParentTagID, a.LocationID, a.Qty, a.Brand, a.KeeperPhone,
+		dateToText(a.WarrantyUntil), a.Lat, a.Lng, a.LocatedAt,
 		nowText(), a.TagID)
 	return err
+}
+
+// ListByParent 列出某设备下的部件（parent_tag_id = tagID）。
+func (r *AssetRepo) ListByParent(ctx context.Context, tagID string) ([]domain.Asset, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT `+assetCols+` FROM assets WHERE parent_tag_id = ? ORDER BY asset_id`, tagID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []domain.Asset
+	for rows.Next() {
+		a, err := scanAsset(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, *a)
+	}
+	return items, rows.Err()
 }
 
 // SetStatus 更新资产状态（作废联动用）。
@@ -154,11 +182,15 @@ type assetScanner interface{ Scan(dest ...any) error }
 func scanAsset(row assetScanner) (*domain.Asset, error) {
 	a := &domain.Asset{}
 	var category, model, sn, keeper, location, unit, remark, deptID sql.NullString
-	var price sql.NullFloat64
-	var buyDate, warrantyEnd, createdAt, updatedAt sql.NullString
+	var price, lat, lng sql.NullFloat64
+	var buyDate, warrantyEnd, createdAt, updatedAt, warrantyUntilNull sql.NullString
+	var parentTagID, brand, keeperPhone, locatedAt sql.NullString
+	var locationID, qty sql.NullInt64
 	if err := row.Scan(&a.AssetID, &a.TagID, &a.Name, &category, &model, &sn,
 		&buyDate, &price, &deptID, &keeper, &location, &a.Status, &unit,
-		&warrantyEnd, &remark, &createdAt, &updatedAt); err != nil {
+		&warrantyEnd, &remark, &createdAt, &updatedAt,
+		&parentTagID, &locationID, &qty, &brand, &keeperPhone,
+		&warrantyUntilNull, &lat, &lng, &locatedAt); err != nil {
 		return nil, err
 	}
 	a.Category = nullToPtr(category)
@@ -172,11 +204,34 @@ func scanAsset(row assetScanner) (*domain.Asset, error) {
 	if price.Valid {
 		a.Price = &price.Float64
 	}
+	a.ParentTagID = nullToPtr(parentTagID)
+	a.Brand = nullToPtr(brand)
+	a.KeeperPhone = nullToPtr(keeperPhone)
+	a.LocatedAt = nullToPtr(locatedAt)
+	if locationID.Valid {
+		v := locationID.Int64
+		a.LocationID = &v
+	}
+	if lat.Valid {
+		v := lat.Float64
+		a.Lat = &v
+	}
+	if lng.Valid {
+		v := lng.Float64
+		a.Lng = &v
+	}
+	a.Qty = int(qty.Int64)
+	if !qty.Valid {
+		a.Qty = 1
+	}
 	var err error
 	if a.BuyDate, err = dateFromNull(buyDate); err != nil {
 		return nil, err
 	}
 	if a.WarrantyEnd, err = dateFromNull(warrantyEnd); err != nil {
+		return nil, err
+	}
+	if a.WarrantyUntil, err = dateFromNull(warrantyUntilNull); err != nil {
 		return nil, err
 	}
 	if a.CreatedAt, err = timeFromText(createdAt.String); err != nil {

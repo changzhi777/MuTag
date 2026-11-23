@@ -20,6 +20,26 @@ export interface Asset {
   remark: string | null;
   created_at: string;
   updated_at: string;
+  // 0006 增强：部件层级 / 二级位置 / 定位预留 / 扩展属性
+  parent_tag_id: string | null;
+  location_id: number | null;
+  qty: number;
+  brand: string | null;
+  keeper_phone: string | null;
+  warranty_until: string | null;
+  lat: number | null;
+  lng: number | null;
+  located_at: string | null;
+}
+
+// 两级位置树节点（parent_id null=一级区域，非空=二级点位）
+export interface Location {
+  id: number;
+  name: string;
+  parent_id: number | null;
+  lat: number | null;
+  lng: number | null;
+  created_at: string;
 }
 
 export interface Tag {
@@ -44,6 +64,15 @@ export interface AssetDraft {
   unit?: string | null;
   warranty_end?: string | null;
   remark?: string | null;
+  // 0006 增强
+  parent_tag_id?: string | null;
+  location_id?: number | null;
+  qty?: number;
+  brand?: string | null;
+  keeper_phone?: string | null;
+  warranty_until?: string | null;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 // 批量导入条目（SheetJS 解析后的标准化结构）

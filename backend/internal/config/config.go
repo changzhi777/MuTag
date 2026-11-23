@@ -19,6 +19,7 @@ type Config struct {
 	RateBurst     float64 // 扫码限流桶容量（突发上限；<=0 关闭限流，纪律 4）
 	RatePerSec    float64 // 扫码限流每秒回填令牌数
 	DatabaseURL   string  // PG 连接串（有值 = 上线形态；空 = SQLite 开发形态）
+	AdminSeed     string  // 首个管理员播种（username:password[:显示名]；admins 空时生效）
 }
 
 func envOr(key, fallback string) string {
@@ -44,6 +45,7 @@ func Load() Config {
 		SQLitePath:    envOr("SQLITE_PATH", "data/mutag.db"),
 		BaseURL:       envOr("BASE_URL", "http://localhost:8080"),
 		AdminPassword: os.Getenv("ADMIN_PASSWORD"),
+		AdminSeed:     envOr("ADMIN_SEED", ""),
 		WechatAppID:   os.Getenv("WECHAT_APPID"),
 		WechatSecret:  os.Getenv("WECHAT_SECRET"),
 		TokenSecret:   envOr("TOKEN_SECRET", "dev-token-secret-change-me"),

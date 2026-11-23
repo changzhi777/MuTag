@@ -28,26 +28,50 @@ type assetReq struct {
 	Unit        *string  `json:"unit"`
 	WarrantyEnd *string  `json:"warranty_end"`
 	Remark      *string  `json:"remark"`
+
+	// 0006 增强
+	ParentTagID   *string  `json:"parent_tag_id"`
+	LocationID    *int64   `json:"location_id"`
+	Qty           *int     `json:"qty"`
+	Brand         *string  `json:"brand"`
+	KeeperPhone   *string  `json:"keeper_phone"`
+	WarrantyUntil *string  `json:"warranty_until"` // YYYY-MM-DD
+	Lat           *float64 `json:"lat"`
+	Lng           *float64 `json:"lng"`
 }
 
 func (r *assetReq) toAsset() (*domain.Asset, error) {
 	a := &domain.Asset{
-		Name:     r.Name,
-		Category: r.Category,
-		Model:    r.Model,
-		Sn:       r.Sn,
-		Price:    r.Price,
-		DeptID:   r.DeptID,
-		Keeper:   r.Keeper,
-		Location: r.Location,
-		Unit:     r.Unit,
-		Remark:   r.Remark,
+		Name:        r.Name,
+		Category:    r.Category,
+		Model:       r.Model,
+		Sn:          r.Sn,
+		Price:       r.Price,
+		DeptID:      r.DeptID,
+		Keeper:      r.Keeper,
+		Location:    r.Location,
+		Unit:        r.Unit,
+		Remark:      r.Remark,
+		ParentTagID: r.ParentTagID,
+		LocationID:  r.LocationID,
+		Brand:       r.Brand,
+		KeeperPhone: r.KeeperPhone,
+		Lat:         r.Lat,
+		Lng:         r.Lng,
+	}
+	if r.Qty != nil && *r.Qty > 0 {
+		a.Qty = *r.Qty
+	} else {
+		a.Qty = 1
 	}
 	var err error
 	if a.BuyDate, err = parseDay(r.BuyDate); err != nil {
 		return nil, err
 	}
 	if a.WarrantyEnd, err = parseDay(r.WarrantyEnd); err != nil {
+		return nil, err
+	}
+	if a.WarrantyUntil, err = parseDay(r.WarrantyUntil); err != nil {
 		return nil, err
 	}
 	a.Status = domain.AssetInUse
@@ -127,7 +151,7 @@ func (d Deps) createAsset(c *gin.Context) {
 	}
 	note := "管理后台新建"
 	_ = d.Store.Events().Create(ctx, &domain.AssetEvent{
-		AssetID: assetID, Type: domain.EventCreate, Actor: "admin",
+		AssetID: assetID, Type: domain.EventCreate, Actor: actorOf(c),
 		NewValue: map[string]any{"name": asset.Name, "keeper": deref(asset.Keeper), "status": string(asset.Status)},
 		Note:     &note,
 	})
@@ -181,7 +205,7 @@ func (d Deps) updateAsset(c *gin.Context) {
 	}
 	if len(changed) > 0 {
 		_ = d.Store.Events().Create(ctx, &domain.AssetEvent{
-			AssetID: old.AssetID, Type: domain.EventUpdate, Actor: "admin",
+			AssetID: old.AssetID, Type: domain.EventUpdate, Actor: actorOf(c),
 			OldValue: oldMap, NewValue: newMap,
 			Note: noteOf(changed),
 		})
@@ -209,7 +233,7 @@ func (d Deps) voidTag(c *gin.Context) {
 	}
 	note := "管理后台作废码并报废资产"
 	_ = d.Store.Events().Create(ctx, &domain.AssetEvent{
-		AssetID: asset.AssetID, Type: domain.EventScrap, Actor: "admin",
+		AssetID: asset.AssetID, Type: domain.EventScrap, Actor: actorOf(c),
 		OldValue: map[string]any{"tag_status": "active", "status": string(asset.Status)},
 		NewValue: map[string]any{"tag_status": "void", "status": "scrapped"},
 		Note:     &note,
@@ -328,7 +352,7 @@ func (d Deps) importAssets(c *gin.Context) {
 			}
 			note := "批量导入（来源行序号 " + rec.Seq + "）"
 			_ = d.Store.Events().Create(ctx, &domain.AssetEvent{
-				AssetID: assetID, Type: domain.EventCreate, Actor: "admin",
+				AssetID: assetID, Type: domain.EventCreate, Actor: actorOf(c),
 				NewValue: map[string]any{"name": rec.Name, "keeper": deref(rec.Keeper), "status": "in_use"},
 				Note:     &note,
 			})

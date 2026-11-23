@@ -66,7 +66,7 @@ func NewRouter(d Deps) *gin.Engine {
 	r.HEAD("/t/:urlCode", rateLimit(d.Limiter), resolve(d))
 
 	// H5 只读详情页（同一限流桶——爬虫可绕过 302 直打 H5）
-	r.GET("/h5/t/:tagID", rateLimit(d.Limiter), d.H5.DetailHandler(d.Store.Tags(), d.Store.Assets(), d.Store.Events()))
+	r.GET("/h5/t/:tagID", rateLimit(d.Limiter), d.H5.DetailHandler(d.Store.Tags(), d.Store.Assets(), d.Store.Events(), d.Store.Locations()))
 
 	// 活码 QR 图端点：服务端渲染活码 URL 的 PNG（公开 + 限流 + HEAD 兼容）
 	r.GET("/qr/:urlCode", rateLimit(d.Limiter), d.qrPNG)
@@ -88,7 +88,7 @@ func NewRouter(d Deps) *gin.Engine {
 	// 管理后台 API（鉴权除 login 外全覆盖）
 	admin := r.Group("/api/admin")
 	{
-		admin.POST("/login", adminLogin(d.AdminPassword))
+		admin.POST("/login", adminLogin(d.AdminPassword, d.Store))
 		authed := admin.Group("", adminAuth(d.AdminPassword))
 		authed.GET("/assets", d.listAssets)
 		authed.POST("/assets", d.createAsset)
@@ -108,6 +108,16 @@ func NewRouter(d Deps) *gin.Engine {
 			cleanup.GET("/jobs", d.cleanupJobs)
 			cleanup.POST("/jobs/:jobID/restore", d.cleanupRestore)
 		}
+
+		// 0006 位置管理（两级树）
+		loc := authed.Group("/locations")
+		{
+			loc.GET("", d.listLocations)
+			loc.POST("", d.createLocation)
+			loc.PUT("/:id", d.updateLocation)
+			loc.DELETE("/:id", d.deleteLocation)
+		}
+
 		authed.GET("/stats", d.stats)
 
 		// M4 财务对接：模板 / 导出审计 / 导入预览确认回滚

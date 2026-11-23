@@ -48,6 +48,9 @@ func main() {
 		log.Fatalf("migrate: %v", err)
 	}
 
+	store := repo.NewStore(database)
+	api.SeedAdmin(store, cfg.AdminSeed) // 0007：admins 空且 ADMIN_SEED 有值时播种首个管理员
+
 	renderer, err := h5.NewRenderer()
 	if err != nil {
 		log.Fatalf("h5 renderer: %v", err)
@@ -55,7 +58,7 @@ func main() {
 
 	deps := api.Deps{
 		DB:            database,
-		Store:         repo.NewStore(database),
+		Store:         store,
 		Cache:         cache.New(60 * time.Second),
 		Limiter:       cache.NewLimiter(cfg.RateBurst, cfg.RatePerSec),
 		H5:            renderer,

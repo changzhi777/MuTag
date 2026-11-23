@@ -5,6 +5,7 @@ package api
 // 背景：本机沙箱禁本地端口绑定，httptest.Server 起不来，故不经网络直接调 router。
 
 import (
+	"strconv"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -590,3 +591,99 @@ func TestE2EAppConfig(t *testing.T) {
 		t.Fatalf("code=%d body=%s", w.Code, w.Body.String())
 	}
 }
+
+// 0006 资产模型增强全链：两级位置树 → 设备（挂位置）→ 部件（挂设备+数量）→
+// H5 详情（位置路径/所属设备/部件清单）→ 删除保护。
+func TestE2EAssetHierarchy(t *testing.T) {
+	gr := newTestRouter(t)
+
+	// 位置：建一级区域
+	w := gr.do(t, http.MethodPost, "/api/admin/locations", `{"name":"研发机房"}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("建区域 code=%d body=%s", w.Code, w.Body.String())
+	}
+	var zone struct {
+		ID int64 `json:"id"`
+	}
+	_ = json.Unmarshal(w.Body.Bytes(), &zone)
+	if zone.ID == 0 {
+		t.Fatal("区域 id 为空")
+	}
+
+	// 二级点位
+	w = gr.do(t, http.MethodPost, "/api/admin/locations",
+		`{"name":"机柜A-3","parent_id":`+strconv.FormatInt(zone.ID, 10)+`}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("建点位 code=%d body=%s", w.Code, w.Body.String())
+	}
+	var spot struct {
+		ID int64 `json:"id"`
+	}
+	_ = json.Unmarshal(w.Body.Bytes(), &spot)
+
+	// 三级挂点位 → 400
+	w = gr.do(t, http.MethodPost, "/api/admin/locations",
+		`{"name":"非法三级","parent_id":`+strconv.FormatInt(spot.ID, 10)+`}`)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("三级应 400: code=%d", w.Code)
+	}
+
+	// 列表含两节点
+	w = gr.do(t, http.MethodGet, "/api/admin/locations", "")
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "研发机房") ||
+		!strings.Contains(w.Body.String(), "机柜A-3") {
+		t.Fatalf("位置列表不符: %s", w.Body.String())
+	}
+
+	// 设备资产：挂区域位置
+	w = gr.do(t, http.MethodPost, "/api/admin/assets",
+		`{"name":"测试机柜设备","location_id":`+strconv.FormatInt(zone.ID, 10)+`,"brand":"APC"}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("建设备失败: code=%d body=%s", w.Code, w.Body.String())
+	}
+	deviceTag := tagIDf(4) // 造数 3 条后下一码 000004
+
+	// 部件资产：挂设备 + qty=4
+	w = gr.do(t, http.MethodPost, "/api/admin/assets",
+		`{"name":"测试硬盘","parent_tag_id":"`+deviceTag+`","qty":4,"brand":"Seagate"}`)
+	if w.Code != http.StatusOK {
+		t.Fatalf("建部件失败: code=%d body=%s", w.Code, w.Body.String())
+	}
+	partTag := tagIDf(5)
+
+	// 部件 H5：所属设备名 + 位置路径继承检查（部件未挂位置 → 无安装位置行）
+	w = gr.do(t, http.MethodGet, "/h5/t/"+partTag, "")
+	if w.Code != http.StatusOK ||
+		!strings.Contains(w.Body.String(), "所属设备") ||
+		!strings.Contains(w.Body.String(), "测试机柜设备") ||
+		!strings.Contains(w.Body.String(), "数量") {
+		t.Fatalf("部件 H5 缺挂载信息: %s", w.Body.String())
+	}
+
+	// 设备 H5：部件清单 + 位置路径（区域 → 点位，设备挂的是区域所以路径=研发机房）
+	w = gr.do(t, http.MethodGet, "/h5/t/"+deviceTag, "")
+	if w.Code != http.StatusOK ||
+		!strings.Contains(w.Body.String(), "部件清单") ||
+		!strings.Contains(w.Body.String(), "测试硬盘") ||
+		!strings.Contains(w.Body.String(), "研发机房") {
+		t.Fatalf("设备 H5 缺部件清单/位置: %s", w.Body.String())
+	}
+
+	// 删除保护：区域被设备引用 → 400
+	w = gr.do(t, http.MethodDelete, "/api/admin/locations/"+strconv.FormatInt(zone.ID, 10), "")
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("区域有引用应 400: code=%d body=%s", w.Code, w.Body.String())
+	}
+
+	// 点位无引用可删（先建后删自洽）
+	w = gr.do(t, http.MethodPost, "/api/admin/locations", `{"name":"临时点位","parent_id":`+strconv.FormatInt(zone.ID, 10)+`}`)
+	var tmp struct {
+		ID int64 `json:"id"`
+	}
+	_ = json.Unmarshal(w.Body.Bytes(), &tmp)
+	w = gr.do(t, http.MethodDelete, "/api/admin/locations/"+strconv.FormatInt(tmp.ID, 10), "")
+	if w.Code != http.StatusOK {
+		t.Fatalf("删空点位应 200: code=%d", w.Code)
+	}
+}
+

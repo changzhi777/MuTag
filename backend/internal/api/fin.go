@@ -126,7 +126,7 @@ func (d Deps) exportRows(c *gin.Context) {
 
 	// 审计留痕：谁 / 何时 / 哪个模板 / 什么过滤条件 / 导出几行（财务合规）
 	job := &domain.ExportJob{
-		JobID: newID("job"), MappingID: req.MappingID, Actor: "admin",
+		JobID: newID("job"), MappingID: req.MappingID, Actor: actorOf(c),
 		Filters: map[string]any{
 			"status": req.Status, "dept": req.Dept,
 			"buy_from": req.BuyFrom, "buy_to": req.BuyTo, "keyword": req.Keyword,
@@ -269,7 +269,7 @@ func (d Deps) importPreview(c *gin.Context) {
 
 	batch := &domain.ImportBatch{
 		BatchID: newID("imp"), MappingID: req.MappingID,
-		FileName: &req.FileName, Actor: "admin",
+		FileName: &req.FileName, Actor: actorOf(c),
 	}
 	if err := d.Store.ImportBatches().CreatePreview(ctx, batch, items); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})

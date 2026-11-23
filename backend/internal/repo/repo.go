@@ -51,6 +51,12 @@ func (s *Store) ExportJobs() *ExportJobRepo { return &ExportJobRepo{db: s.DB} }
 // ImportBatchRepo 导入批次数据访问。
 func (s *Store) ImportBatches() *ImportBatchRepo { return &ImportBatchRepo{db: s.DB} }
 
+// LocationRepo 两级位置树数据访问。
+func (s *Store) Locations() *LocationRepo { return &LocationRepo{db: s.DB} }
+
+// AdminRepo 后台管理员数据访问。
+func (s *Store) Admins() *AdminRepo { return &AdminRepo{db: s.DB} }
+
 // Count 返回资产总数。
 func (s *Store) Count(ctx context.Context) (int64, error) {
 	var n int64
