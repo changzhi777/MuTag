@@ -16,7 +16,7 @@
 |---|---|---|
 | 框架 | Expo ~58.0.26 + RN 0.88.1 + react 19.3 | Expo prebuild 生成 android/ 原生工程，本地 gradlew 出 APK（不走 EAS 云构建） |
 | 扫码 | react-native-vision-camera 5.2.4 + barcode-scanner 5.2.4 + nitro-modules 0.37.2 | **V5 是 Nitro 大重构**：无 `useCodeScanner` hook；正确用法 = `useBarcodeScannerOutput({barcodeFormats:['qr-code'], onBarcodeScanned, onError})` + `<Camera outputs={[output]}>` 组合；Barcode 字段 `rawValue` |
-| 壳 | react-native-webview ^14.0.1 | originWhitelist 锁 mutag 域内，外链交系统浏览器 |
+| 壳 | react-native-webview ^14.0.1 | originWhitelist 锁 mutag 域内，外链交系统浏览器；**UA 追加 `QingMuApp/1.0` 标识**——后端 /t 分流器据此记 scan_logs.channel=app（渠道统计区分 APK 来源，后端 weapp 优先） |
 | 导航 | @react-navigation/native 7.x + native-stack + screens + safe-area-context | Scan / Detail 两屏 |
 | 包名 | `cn.qingmulife.mutag`（versionName 1.0.0 / versionCode 1） | minSdk 24 / targetSdk 36 / compileSdk 37 |
 | ABI | **arm64-v8a 单架构**（`gradle.properties` 的 `reactNativeArchitectures`） | 2026 真机全 arm64；四架构全量 128MB → 单架构 **40MB（-69%）**；x86 仅模拟器需要，出包不留 |
@@ -68,7 +68,6 @@ cd android && ./gradlew assembleRelease
 
 ## 待办 / 余项
 
-- **真机验收** 📋：装 APK → 扫真实活码（MT-2026-000001）→ WebView 详情页 + 扫码计数入 scan_logs → 手动输入通道 → 返回再扫
+- **真机验收** 📋：装 APK → 扫真实活码（MT-2026-000001）→ WebView 详情页 + 扫码计数入 scan_logs（channel=app）→ 手动输入通道 → 返回再扫；**UA 渠道标识改动后需重跑 assembleRelease 出包**
 - **正式签名**：内部测试 debug keystore 够用；对外分发前生成正式 keystore 并配 signingConfig
-- **渠道标识**（二期）：scan_logs.channel 扩 `app` 值，区分 APK 扫码流量
 - **logo 闪屏统一**：splash 目前纯 logo 白底，可对齐 admin-web 品牌样式

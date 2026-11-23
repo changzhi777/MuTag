@@ -17,6 +17,9 @@ var errTagVoid = errors.New("tag void")
 // wechatUAFlag 微信内置浏览器 UA 标识。
 const wechatUAFlag = "MicroMessenger"
 
+// appUAFlag 青沐码 APK WebView UA 后缀标识（mobile/DetailScreen 追加）。
+const appUAFlag = "QingMuApp"
+
 // resolveTarget 活码分流决策（纯函数，便于单测）。
 // 微信内扫码且已配置小程序跳转 → 小程序；其余一律 H5 只读详情。
 // M2 起微信内目标切为小程序唤起链接，码本身无需重印。
@@ -27,12 +30,16 @@ func resolveTarget(userAgent, h5Path, miniJumpURL string) string {
 	return h5Path
 }
 
-// scanChannel 依 UA 归类扫码渠道。
+// scanChannel 依 UA 归类扫码渠道（微信优先：APK 内 WebView 载入微信页场景仍归 weapp）。
 func scanChannel(userAgent string) string {
-	if strings.Contains(userAgent, wechatUAFlag) {
+	switch {
+	case strings.Contains(userAgent, wechatUAFlag):
 		return "weapp"
+	case strings.Contains(userAgent, appUAFlag):
+		return "app"
+	default:
+		return "h5"
 	}
-	return "h5"
 }
 
 // resolve GET /t/:urlCode —— 活码 302 分流器。

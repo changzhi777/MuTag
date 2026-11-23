@@ -28,6 +28,8 @@ export default function DetailScreen({ route }: any) {
       <WebView
         source={{ uri: url }}
         style={S.web}
+        // UA 追加渠道标识：后端 /t 分流器据此把扫码记录归 channel=app（scan_logs 统计区分 APK 来源）
+        userAgent="Mozilla/5.0 (Linux; Android) AppleWebKit/537.36 QingMuApp/1.0"
         originWhitelist={['https://mutag.qingmulife.cn/*']}
         onShouldStartLoadWithRequest={(req) => {
           // 活码域内放行；外链（防伪签名/广告等）交系统浏览器
