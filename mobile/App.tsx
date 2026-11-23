@@ -1,0 +1,27 @@
+// 青沐码 · MuTag 扫码 App 入口。
+// 用法：ScanScreen 扫活码/手动输入编号 → DetailScreen WebView 展示资产详情。
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StatusBar } from 'expo-status-bar';
+import ScanScreen from './src/screens/ScanScreen';
+import DetailScreen from './src/screens/DetailScreen';
+
+const Stack = createNativeStackNavigator();
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <StatusBar style="light" />
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      >
+        <Stack.Screen name="Scan" component={ScanScreen} />
+        <Stack.Screen name="Detail" component={DetailScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
