@@ -1,6 +1,6 @@
 # mobile/ · 青沐码 Android APK（RN）— 模块文档
 
-> 上级：[根 CLAUDE.md](../CLAUDE.md) ｜ 首建：V1.18（2026-11-23）｜ 实态：**APK 已出包（128MB，V2 debug 签名，真机待验 📋）**
+> 上级：[根 CLAUDE.md](../CLAUDE.md) ｜ 首建：V1.18（2026-11-23）｜ 实态：**APK 已出包（40MB · arm64-v8a 单架构 · V2 debug 签名，真机待验 📋）**
 
 ---
 
@@ -19,6 +19,7 @@
 | 壳 | react-native-webview ^14.0.1 | originWhitelist 锁 mutag 域内，外链交系统浏览器 |
 | 导航 | @react-navigation/native 7.x + native-stack + screens + safe-area-context | Scan / Detail 两屏 |
 | 包名 | `cn.qingmulife.mutag`（versionName 1.0.0 / versionCode 1） | minSdk 24 / targetSdk 36 / compileSdk 37 |
+| ABI | **arm64-v8a 单架构**（`gradle.properties` 的 `reactNativeArchitectures`） | 2026 真机全 arm64；四架构全量 128MB → 单架构 **40MB（-69%）**；x86 仅模拟器需要，出包不留 |
 | 签名 | V2 · debug keystore（RN 模板默认 release 用 debug 签名） | 内测/内部分发可用；**上商店前须换正式 keystore** |
 | 权限 | CAMERA（android.permissions 声明，**非 config plugin**——vision-camera V5 已无 app.plugin.js，plugins 里注册会 prebuild 报错） | INTERNET 等 expo 默认集 |
 
@@ -45,8 +46,10 @@ cd mobile
 npm install                      # 或 pnpm（注意 peer 冲突需 --legacy-peer-deps 场景）
 npx expo prebuild --platform android --no-install
 echo "sdk.dir=$HOME/Library/Android/sdk" > android/local.properties
+# ABI 收敛单架构（prebuild 会重置此行，每次 prebuild 后必做）：
+sed -i '' 's/^reactNativeArchitectures=.*/reactNativeArchitectures=arm64-v8a/' android/gradle.properties
 cd android && ./gradlew assembleRelease
-# 产物：app/build/outputs/apk/release/app-release.apk
+# 产物：app/build/outputs/apk/release/app-release.apk（40MB · arm64-v8a 单架构）
 ```
 
 **首次构建自动装**：NDK 27.1.12297006（license 已接受即自动）+ Build-Tools 37 + CMake。
@@ -66,7 +69,6 @@ cd android && ./gradlew assembleRelease
 ## 待办 / 余项
 
 - **真机验收** 📋：装 APK → 扫真实活码（MT-2026-000001）→ WebView 详情页 + 扫码计数入 scan_logs → 手动输入通道 → 返回再扫
-- **包体优化**：128MB（4 ABI 全量）→ gradle `abiFilters/splits` 只留 arm64-v8a 可减至 ~40MB
 - **正式签名**：内部测试 debug keystore 够用；对外分发前生成正式 keystore 并配 signingConfig
 - **渠道标识**（二期）：scan_logs.channel 扩 `app` 值，区分 APK 扫码流量
 - **logo 闪屏统一**：splash 目前纯 logo 白底，可对齐 admin-web 品牌样式
