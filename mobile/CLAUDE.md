@@ -1,6 +1,6 @@
 # mobile/ · 青沐码 Android APK（RN）— 模块文档
 
-> 上级：[根 CLAUDE.md](../CLAUDE.md) ｜ 首建：V1.18（2026-11-23）｜ 实态：**APK 已出包（40MB · arm64-v8a · V2 debug 签名）· 真机验收 ✅ 通过（2026-11-24）· 后端 channel=app 链路已部署验证**
+> 上级：[根 CLAUDE.md](../CLAUDE.md) ｜ 首建：V1.18（2026-11-23）｜ 实态：**APK 已出包（47MB · arm64-v8a · R8 关闭 · V2 debug 签名）· 真机验收 ✅（小米 marble 实机扫码→落库 channel=app 全链实证）· 分发通道 https://mutag.qingmulife.cn/apk/
 
 ---
 
@@ -19,7 +19,7 @@
 | 壳 | react-native-webview ^14.0.1 | originWhitelist 锁 mutag 域内，外链交系统浏览器；**UA 追加 `QingMuApp/1.0` 标识**——后端 /t 分流器据此记 scan_logs.channel=app（渠道统计区分 APK 来源，后端 weapp 优先） |
 | 导航 | @react-navigation/native 7.x + native-stack + screens + safe-area-context | Scan / Detail 两屏 |
 | 包名 | `cn.qingmulife.mutag`（versionName 1.0.0 / versionCode 1） | minSdk 24 / targetSdk 36 / compileSdk 37 |
-| ABI | **arm64-v8a 单架构**（`gradle.properties` 的 `reactNativeArchitectures`） | 2026 真机全 arm64；四架构全量 128MB → 单架构 **40MB（-69%）**；x86 仅模拟器需要，出包不留 |
+| ABI | **arm64-v8a 单架构**（`gradle.properties` 的 `reactNativeArchitectures`） | 2026 真机全 arm64；四架构全量 128MB → 单架构 40MB；R8 关闭后 **47MB**（MLKit 闭源 AAR 与 proguard-android-optimize 不兼容，混淆致启动即崩——见构建链必做项）；x86 仅模拟器需要，出包不留 |
 | 签名 | V2 · debug keystore（RN 模板默认 release 用 debug 签名） | 内测/内部分发可用；**上商店前须换正式 keystore** |
 | 权限 | CAMERA（android.permissions 声明，**非 config plugin**——vision-camera V5 已无 app.plugin.js，plugins 里注册会 prebuild 报错） | INTERNET 等 expo 默认集 |
 
@@ -46,10 +46,12 @@ cd mobile
 npm install                      # 或 pnpm（注意 peer 冲突需 --legacy-peer-deps 场景）
 npx expo prebuild --platform android --no-install
 echo "sdk.dir=$HOME/Library/Android/sdk" > android/local.properties
-# ABI 收敛单架构（prebuild 会重置此行，每次 prebuild 后必做）：
+# ABI 收敛 + 关闭 R8 混淆（prebuild 会重置这两行，每次 prebuild 后必做）：
+#   minify 真机实测坑：R8 proguard-android-optimize 破坏 MLKit 闭源内部类 → 启动即 JavascriptException NPE 闪退（小米 marble 无 GMS 机实证）
 sed -i '' 's/^reactNativeArchitectures=.*/reactNativeArchitectures=arm64-v8a/' android/gradle.properties
+sed -i '' 's/^android.enableMinifyInReleaseBuilds=.*/android.enableMinifyInReleaseBuilds=false/' android/gradle.properties
 cd android && ./gradlew assembleRelease
-# 产物：app/build/outputs/apk/release/app-release.apk（40MB · arm64-v8a 单架构）
+# 产物：app/build/outputs/apk/release/app-release.apk（47MB · arm64-v8a · R8 off）
 ```
 
 **首次构建自动装**：NDK 27.1.12297006（license 已接受即自动）+ Build-Tools 37 + CMake。
@@ -68,6 +70,7 @@ cd android && ./gradlew assembleRelease
 
 ## 待办 / 余项
 
-- ~~真机验收~~ ✅ **2026-11-24 通过**：装包 → 扫真实活码 → WebView 详情 → 返回再扫 → 手动输入通道全过；后端 channel=app 已随 0005 迁移部署 106（psql 终验落库 channel=app）
+- ~~真机验收~~ ✅ **2026-11-24 双轮通过**：① 首轮（GMS 机型）扫码→WebView 详情→返回→手动输入全过 ② **小米 marble（无 GMS，Android 15/澎湃 OS）实测揪出 R8 闪退 P0**——真机安装即崩（MLKit 内部类被混淆 NPE），关 minify 修复后 adb 全链复测：相机授权→**扫电脑屏幕 QR 码**→详情页→生产落库 `channel=app`（psql 终验）✓
+- **APK 分发通道已上线**：106 nginx `location /apk/` → 手机浏览器直下 `https://mutag.qingmulife.cn/apk/qingmuma-1.0.0.apk`（员工装机永久通道；**发新包后须同步 scp 覆盖 106 `/opt/mutag/apk/`**）
 - **正式签名**：内部测试 debug keystore 够用；对外分发前生成正式 keystore 并配 signingConfig
 - **logo 闪屏统一**：splash 目前纯 logo 白底，可对齐 admin-web 品牌样式
