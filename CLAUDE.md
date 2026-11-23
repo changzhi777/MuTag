@@ -1,6 +1,6 @@
 # MuTag（青沐动态码）· 企业资产活码管理小程序 — AI 上下文文档
 
-> 代号：**MuTag** ｜ 版本：**V1.16（模块详档 + 服务端 QR 实态轮）** ｜ 更新时间：2026-11-18 08:22 (CST)
+> 代号：**MuTag** ｜ 版本：**V1.18（青沐码 Android APK 落地轮）** ｜ 更新时间：2026-11-23 23:06 (CST)
 > 发布版本规程：**V1.0.x 第 3 位递增**（当前发布版 **V1.0.4**）——`sh scripts/next_version.sh calc patch` 算号 / `apply patch` 一条命令全自动（三件套+commit+tag+push，脏工作区拒绝）；发布版（git tag/CHANGELOG.md）与本文档 changelog（AI 上下文文档演进线 V1.x）是两条线
 > 维护：init-architect 首轮 + /zcf:workflow 增量 · 配套索引：[.claude/index.json](./.claude/index.json)
 > 唯一事实来源：[MuTag-项目设计方案.md](./MuTag-项目设计方案.md)（v0.1，2026-11-16）——本文档全部内容提炼自它，冲突时以设计方案为准
@@ -29,6 +29,7 @@
 | 2026-11-17 | V1.15 | 🛡️ **重复事故根治三连（P0/P1/P2）+ 66 条清理实战 + LAN 数据库盘点**：**事故**：antd 6 × React 19 静态 message 全静默 → 导入三连点 66 条重复入库（135→74 收敛）。**P0 提示根治**：main.tsx 四层包裹 AntdApp + 12 文件 43 处静态 message 换 App.useApp() + build.sh 防回归闸门（/usr/bin/grep 绝对路径兼容 ugrep + 双形态检测 + \|\| true 防 set -e 误杀，拦截/通过双测）。**P1 导入去重**：utils/date.ts 序列号 UTC 数学（cellDates 本地时区补偿实测 04-23 读成 04-22，序列号 46135=04-23 权威）+ internal/api/dedupe.go 键归一化 min/max 幂等（name\|keeper\|date 小写压空白）+ /import/precheck 只读预检 + /import dedup 默认 true（force 逃生口）+ ImportPage 预检三态 UI（新建/跳过/疑似 Popover）+ e2e 六场景全绿；**生产验收彩蛋**：precheck 算出「将新建 5 条」正好补齐首次点击中断的缺失资产，台账 73→78 对账闭环。**66 条重复清理**：curl/Playwright 双通道精确比对（name\|keeper 聚合避时区漂移）→ Supabase SQL Editor 事务删（4 表快照 _bak_1117_* 可回滚）→ 139→73 全绿。**P2 存量清洗功能**：0004 迁移双方言 cleanup_jobs 审计 + cleanup_repo（快照 4 表/单事务原子清理/restore 回补/PG setval 序列重推）+ cleanup API（scan 预标 delete/void 双 action——无履历无扫码才删、有履历改报废保留 + execute confirm_count 防误触 + jobs 审计列表）+ CleanupPage 三步流 UI（Steps/Segmented 策略/行级色标/danger confirm/Result 快照恢复）；**纪律 1 推论落地**：tags 永不物理删（nextTagID=MAX+1 实证物理删必致码号回池）一律置 void 保留号簿；e2e TestE2ECleanupChain 全绿（分组预标/混合清理/confirm 拒绝/快照回滚/tags 恢复/号不复用）；修五坑：SQLite 方言 now()::text、modernc 多 VALUES 占位符、快照表名连字符非法、events/scanlogs 快照命名不一致、MarkExecuted 参数序错位（executed_at 收 jobID）；**验收实战再揪 keepN=1 误判**——8 组「重复」实为 xlsx qty 语义合法多件（险误删 11 条），单簇保护上线（同簇数=1 且无权威文件 → 整组不进重复列表，生产复扫 78 条 0 重复绿条实证）。**LAN 数据库盘点**：10.10.10.0/24 扫描（nc 初扫 + nmap -sT 复核，nc 有假阳性 .150/.12:6379）→ 2 PG（.11/.12，pg_hba 未放行本机段）+ 4 Redis（.11 裸奔 ⚠️ / .13/.14/.18 有密码）；DB Kit 连接配置总表 `.zcf/plan/current/db-kit-connections.md`（14 条：Supabase×2/LAN×5/云隧道×3/SQLite×4）；**运维通道新增**：Playwright MCP 有腾讯云登录态可全程自主操作 OrcaTerm（免密 TAT/root，SSH 22 被 Clash TUN 掐断的替代通道） |
 | 2026-11-18 | V1.16 | 📚 **模块详档首建 ×4 + 产物归档工具链 + 服务端 QR 实态入档**：① **四模块 CLAUDE.md 首次生成**（[backend](./backend/CLAUDE.md) / [admin-web](./admin-web/CLAUDE.md) / [miniprogram](./miniprogram/CLAUDE.md) / [deploy](./deploy/CLAUDE.md)，均带导航面包屑——首轮规划态未建，本轮补齐；接口全景 / 双形态存储 / 21 测试函数 / 打印工场与 message 闸门 / 双活拓扑与 Portainer 附录逐一入档）② **产物自动归档工具链**：`scripts/tidy_artifacts.sh`（根目录散落 png→`deploy/tencent/screenshots/`、yml→`.playwright-mcp/snapshots/`；护栏=git 已跟踪文件一律不动、同名追加后缀永不覆盖）+ `.githooks/pre-commit`（core.hooksPath 已挂——提交即自动整理）③ **服务端 QR 端点实态确认入档**（上线本身见 V1.14）：`internal/qr`（skip2 薄封装，size 钳 64-1024 缺省 512）+ `internal/api/qr.go`（复用 lookupTagID 校验，void→404 与分流语义一致）+ e2e TestE2EQRCode 七断言 106 容器 PASS + 公网 200 实测 + Portainer 附录在 `deploy/tencent/README.md` 运维附录段 ④ **qr-logo 登记为待办**（[.zcf/plan/current/qr-logo.md](./.zcf/plan/current/qr-logo.md) 已批准**未实施**：`internal/qr` 升级 withLogo（纠错 Medium→High + 中心白垫 22% + logo 贴图 18% + go:embed）、`?logo=0` 开关、PrintPage 默认 logoOn+`/logo.png`、部署 106；logo 原图 256×256 RGBA 已定位 `/Volumes/user/新素材/微信图片_20260903153544_17_1821.png`）——**勿当作已完成** ⑤ Mermaid 重画（含 internal/qr + 双活生产拓扑 + 可点击模块文档）· index.json v1.5.0 |
 | 2026-11-19 | V1.17 | 🎨 **QR 码中心嵌青沐 logo（qr-logo 五步全落地）**：logo 资产双处入库（`admin-web/public/logo.png` 256px + `internal/qr/assets/logo.png` 64px sips 预缩——沙箱拦 sips 用 Go 标准库双线性缩图器替代）；`internal/qr` Render 加 withLogo（纠错 Medium→**High** 30% 容错 + 白垫 22% + logo 贴图 18% + go:embed）；`/qr/:urlCode` 默认带 logo、`?logo=0` 出纯码；PrintPage 默认 logoOn+`/logo.png`（dist 重建 embed 同步）；e2e 补第八断言（logo bytes > 纯码）。**部署坑四连**：① `import "embed"` 须 `_ "embed"`（blank import——只用指令不用符号时报 not used）② 106 `fetch --depth 1` 对 GitHub TLS 断连会**静默损坏 blob**（\t 被映射成 \x0C/\x14 控制字符，checkout 恢复仍脏——qr.go 最终以本地 scp 单文件直传根治）③ Dockerfile GOPROXY/GOSUMDB ENV 曾是 106 未提交修改被 reset 清掉 → 正式入 git（52c34ff）④ sed 换行注入在 OrcaTerm 链路不可靠（\n 变字面量吞行）——长文件传输一律 scp/tar，OrcaTerm 只做短命令。**终验：公网 `mutag.qingmulife.cn/qr/MT-2026-000001` logo 版 10926 字节 > 纯码 811，青沐彩色 logo 居中白垫清晰可见**；PrintPage 默认品牌码随 dist 重建同步（新用户自动开启）。遗留：`28ab633`（embed 修正）push 待 Clash 稳定 · 106 工作区 go.sum/Dockerfile sed 变更待 git 回补 |
+| 2026-11-23 | V1.18 | 📱 **青沐码 Android APK 落地（mobile/ 新模块，方案 B 原生扫码+WebView 壳）**：技术调研（vision-camera V5 API 实测读源码——**Nitro 大重构无 useCodeScanner**，正确用法 = `useBarcodeScannerOutput` + `<Camera outputs>` 组合，Barcode 取 `rawValue`，`onError` 必填；弃用现成 `<CodeScanner>` 组件因其 device 为 null 直接 throw）→ 四决策点用户拍板（方案 B / 手动输入 / APK 直连 mutag.qingmulife.cn / 名"青沐码"）→ 全套源码手写（Expo 58 + RN 0.88.1 + react 19.3 + webview 14 + navigation 7，Scan/Detail 两屏：扫码防连扫 + 手动输入兜底 + WebView 锁 mutag 域内）→ `assembleRelease` 出包 128MB（4 ABI · V2 debug 签名 · cn.qingmulife.mutag · minSdk 24）。**构建链实战四坑**：① vision-camera V5 无 config plugin，app.json plugins 注册致 prebuild 报错——CAMERA 权限改 `android.permissions` 原生声明 ② react 19.1 不满足 RN 0.88 peer ^19.3.0（npm eresolve）③ Claude 沙箱 JVM 构建 3 路 dead（~/.gradle 写锁 EPERM → GRADLE_USER_HOME 迁仓内 / JVM 不认 env 代理直连被掐 TLS / 沙箱过滤代理对 gradle CDN 限速 40KB/s 断流）——**构建一律用户终端**：`JAVA_TOOL_OPTIONS` 挂 Clash 7897 代理 + distributionUrl 切腾讯云镜像（16MB/s）+ socketTimeout 120s，NDK 27.1 / Build-Tools 37 / CMake 全自动装齐 ④ pnpm 严格 peer 找不到 nitro-image@^0.29.0（registry 无此版本线，peer 实为 `*`）→ npm 安装免疫。`mobile/CLAUDE.md` 首建（含 V5 API 表 + 构建坑全录）；APK 产物与 android/ 均入 gitignore。真机验收 📋 余项 |
 
 ---
 
@@ -36,8 +37,8 @@
 
 - **生产已上线（2026-11-17）· 双活入口，广州 106 为活码主入口**：**https://mutag.qingmulife.cn → 广州 106（106.53.168.73）**（DNS 权威已切，certbot TLS，nginx IaC 见 `deploy/tencent/mutag-gz106.nginx.conf`）；香港 118（43.129.201.118，mutag.qingmulife.com）继续在跑作为 .com 入口；两机均 systemd/docker + nginx TLS + Supabase PG17，**连接形态不要求一致**（118 直连 db.:5432 / 106 session pooler :5432——106 无 IPv6 出口）；**服务端活码 QR 端点 `/qr/:urlCode` 双机已部署**（106 容器 e2e PASS + 公网 200 实测）；Portainer 汉化版挂 106（`ser.qingmulife.cn/docker/`）；管理后台密码见远端 `/opt/mutag/mutag.env`；部署拓扑与排障实录见 `deploy/tencent/README.md`（IaC 归档，含广州 106 上线实录 + Portainer 运维附录）；生产库 78 条真实资产（2026-11-17 重复清理后对账闭环）；Supabase 库中 000001-000003 为 e2e 残留测试数据
 - **开发工具链（2026-11-18 入档）**：`scripts/tidy_artifacts.sh` + `.githooks/pre-commit`（`core.hooksPath .githooks` 已挂）——提交自动归档根目录散落的截图/浏览器快照（git 已跟踪文件与正式产物一律不动）；`scripts/next_version.sh` 发布规程 · `scripts/deploy_tencent.sh` 腾讯云一键部署
-- **下一轮待办（已批准·未实施，勿当作已完成）**：**QR 码中心嵌 logo**——规划见 [.zcf/plan/current/qr-logo.md](./.zcf/plan/current/qr-logo.md)：logo 资产两处入库（`admin-web/public/logo.png` 256px + `backend/internal/qr/assets/logo.png` 64px）、`internal/qr` Render 加 withLogo（纠错 Medium→High + 中心白垫 + go:embed）、`/qr/:urlCode?logo=0` 开关、PrintPage 默认 logoOn、部署 106 公网验证
-- **M1-M4 代码全部落地**：`backend/` + `admin-web/` + `miniprogram/` + `deploy/` 四模块均为实态且各有 CLAUDE.md 详档（改代码前先读对应模块文档）；M2 真机联调与 M4 真实财务文件验收为余项
+- **下一轮待办（已批准·未实施，勿当作已完成）**：**mobile 真机验收**（装 `青沐码-1.0.0.apk` → 扫真实活码 → WebView 详情 + 扫码计数 + 手动输入通道）；**包体优化**（128MB 4 ABI → abiFilters 只留 arm64-v8a 约 40MB）；**正式签名**（上商店前换正式 keystore）
+- **M1-M4 代码全部落地**：`backend/` + `admin-web/` + `miniprogram/` + `deploy/` 四模块均为实态且各有 CLAUDE.md 详档（改代码前先读对应模块文档）；**mobile/（V1.18 新增，安卓 APK 客户端）已出包**，详档 [mobile/CLAUDE.md](./mobile/CLAUDE.md)；M2 真机联调与 M4 真实财务文件验收为余项
 - **存储形态（关键裁决）**：开发/验收 = **SQLite**（modernc 纯 Go 驱动，`backend/data/mutag.db`，零外部依赖）+ 进程内 TTL 缓存；上线 = **Supabase PG17**（`DATABASE_URL` 单变量切换；自建 PG17+Redis7 compose 保留为备选）。Redis 限流替换点收敛在 `internal/cache/limiter.go`
 - **仓库实态**：GitHub 公开仓 `github.com/changzhi777/MuTag`（2026-11-16 首发 22e1ebb）；`.gitignore` 含 .claude/.zcf/.spec-workflow/.pnpm-store/backend/server/*.tsbuildinfo；真实数据 xlsx 按用户裁决入库
 - `.spec-workflow/` 是 spec-workflow MCP 工具的模板目录，**不是项目模块**，勿当作代码阅读。
@@ -67,6 +68,7 @@
 graph TD
     subgraph CLIENT["客户端层"]
         MP["miniprogram · 员工端 🟢<br/>扫码/详情/四动作/上报/历史"]
+        MOB["mobile · 青沐码 APK 🟢<br/>vision-camera 原生扫码<br/>+ WebView 壳（V1.18 出包）"]
         AW["admin-web · 管理后台 🟢<br/>台账/码管理/打印工场/导入去重<br/>表格编辑/财务/清洗/统计"]
         EXT["外部扫码<br/>系统浏览器 / 扫码枪"]
     end
@@ -86,6 +88,7 @@ graph TD
     TOOLS["scripts + .githooks<br/>版本规程/一键部署/产物归档"]
 
     MP -->|"wx.request"| API
+    MOB -->|"WebView 加载 /t/{code}"| SL
     AW -->|"HTTPS"| API
     EXT -->|"扫活码"| SL
     SL -->|"内部浏览器"| H5
@@ -101,6 +104,7 @@ graph TD
     TOOLS -.-> DEP
 
     click MP "./miniprogram/CLAUDE.md" "miniprogram 模块文档"
+    click MOB "./mobile/CLAUDE.md" "mobile 青沐码 APK 模块文档"
     click AW "./admin-web/CLAUDE.md" "admin-web 模块文档"
     click BE "./backend/CLAUDE.md" "backend 模块文档"
     click QREP "./backend/CLAUDE.md" "internal/qr 详见 backend 模块文档"
@@ -118,6 +122,7 @@ graph TD
 | `backend/` | 活码服务：/t 分流 + **/qr 码图端点** + /h5 SSR + /api/v1 员工端 + /api/admin 管理端；0001-0004 双方言自迁移；管理 SPA embed 单二进制 | 🟢 生产运行 | Go 1.26 + Gin + modernc/pgx 双形态 | [CLAUDE.md](./backend/CLAUDE.md) |
 | `admin-web/` | 管理后台 8 页：登录/台账 CRUD/码管理/**码版面打印工场**/批量导入（precheck+dedup）/**表格编辑**/**财务对接**/**重复清洗**/统计；build.sh 静态 message 闸门 | 🟢 生产运行 | React 19 + AntD 6 + Vite + TS | [CLAUDE.md](./admin-web/CLAUDE.md) |
 | `miniprogram/` | 员工端 5 页：扫码（四形态编号提取）/详情/快捷操作四动作/我的上报/扫码历史；dev 登录模式 | 🟢 逻辑闭环（真机联调 📋） | 原生微信小程序（测试号） | [CLAUDE.md](./miniprogram/CLAUDE.md) |
+| `mobile/` | **青沐码 Android APK**（V1.18 出包）：vision-camera V5 原生扫码（MLKit）+ WebView 壳加载 /t/{code}；手动输入兜底；128MB · V2 debug 签名 · 真机验收 📋 | 🟢 已出包（真机待验） | Expo 58 + RN 0.88 + vision-camera 5 + webview 14 | [CLAUDE.md](./mobile/CLAUDE.md) |
 | `deploy/` | verify.sh **15 连检**一键验收 + 三档存储形态 README + `tencent/` IaC（双活 nginx×3 + systemd + 部署实录 + **Portainer 附录**） | 🟢 生产就绪 | bash / docker-compose / nginx | [CLAUDE.md](./deploy/CLAUDE.md) |
 | `scripts/` + `.githooks/` | `next_version.sh`（V1.0.x 发布规程）· `deploy_tencent.sh`（一键部署）· `tidy_artifacts.sh` + pre-commit（**产物自动归档，hooks 已挂**） | 🟢 工具链 | bash | — |
 
@@ -202,8 +207,7 @@ graph TD
 
 - [MuTag-项目设计方案.md](./MuTag-项目设计方案.md) — 唯一事实来源（v0.1，2026-11-16）
 - [README.md](./README.md) — 快速开始与开发约束
-- [backend/CLAUDE.md](./backend/CLAUDE.md) · [admin-web/CLAUDE.md](./admin-web/CLAUDE.md) · [miniprogram/CLAUDE.md](./miniprogram/CLAUDE.md) · [deploy/CLAUDE.md](./deploy/CLAUDE.md) — 四模块详档（V1.16 首建）
+- [backend/CLAUDE.md](./backend/CLAUDE.md) · [admin-web/CLAUDE.md](./admin-web/CLAUDE.md) · [miniprogram/CLAUDE.md](./miniprogram/CLAUDE.md) · [deploy/CLAUDE.md](./deploy/CLAUDE.md) — 四模块详档（V1.16 首建）· [mobile/CLAUDE.md](./mobile/CLAUDE.md) — 青沐码 APK 详档（V1.18 首建）
 - [deploy/tencent/README.md](./deploy/tencent/README.md) — 部署知识库（双活实录 + Portainer 附录）
-- [.zcf/plan/current/qr-logo.md](./.zcf/plan/current/qr-logo.md) — 下一轮待办：QR 中心嵌 logo（已批准未实施）
 - [.zcf/plan/current/db-kit-connections.md](./.zcf/plan/current/db-kit-connections.md) — DB Kit 连接配置总表（14 条）
 - [.claude/index.json](./.claude/index.json) — 扫描索引（v1.5.0，2026-11-18）
