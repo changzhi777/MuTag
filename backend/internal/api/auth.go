@@ -113,9 +113,9 @@ func adminLogin(password string, store *repo.Store) gin.HandlerFunc {
 			}
 			name := admin.Username
 			if admin.DisplayName != "" {
-				name = admin.DisplayName
+				name = admin.DisplayName // token 带显示名：入库 Actor 显示真实姓名（如"张晨"）
 			}
-			c.JSON(200, gin.H{"token": issueToken(key, admin.Username, time.Now()), "display_name": name})
+			c.JSON(200, gin.H{"token": issueToken(key, name, time.Now()), "display_name": name})
 			return
 		}
 		// 单密码轨（兼容形态）
