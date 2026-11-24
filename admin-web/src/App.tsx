@@ -44,6 +44,9 @@ function Shell() {
             { key: "admins", icon: <TeamOutlined />, label: "管理员" }
           ]}
         />
+        <div style={{ color: "#6b7280", padding: "12px 24px", fontSize: 12, position: "absolute", bottom: 16 }}>
+          {`V${__APP_VERSION__}`}
+        </div>
       </Sider>
       <Layout>
         <Header style={{ background: "#fff", display: "flex", justifyContent: "flex-end", alignItems: "center", paddingInline: 24 }}>

@@ -181,17 +181,23 @@ func (d Deps) updateAsset(c *gin.Context) {
 	updated.TagID = tagID
 	updated.AssetID = old.AssetID
 
-	// 字段级 diff 快照（无旁路纪律）
+	// 字段级 diff 快照（无旁路纪律）——含 0006 新字段（漏 diff = 变更不写履历，违反纪律 2）
 	changed := map[string]any{}
 	oldMap := map[string]any{
 		"name": old.Name, "keeper": deref(old.Keeper), "location": deref(old.Location),
 		"sn": deref(old.Sn), "model": deref(old.Model), "unit": deref(old.Unit),
 		"remark": deref(old.Remark), "status": string(old.Status),
+		"parent_tag_id": deref(old.ParentTagID), "location_id": idS(old.LocationID),
+		"qty": strconv.Itoa(old.Qty), "brand": deref(old.Brand),
+		"keeper_phone": deref(old.KeeperPhone), "warranty_until": dayStr(old.WarrantyUntil),
 	}
 	newMap := map[string]any{
 		"name": updated.Name, "keeper": deref(updated.Keeper), "location": deref(updated.Location),
 		"sn": deref(updated.Sn), "model": deref(updated.Model), "unit": deref(updated.Unit),
 		"remark": deref(updated.Remark), "status": string(updated.Status),
+		"parent_tag_id": deref(updated.ParentTagID), "location_id": idS(updated.LocationID),
+		"qty": strconv.Itoa(updated.Qty), "brand": deref(updated.Brand),
+		"keeper_phone": deref(updated.KeeperPhone), "warranty_until": dayStr(updated.WarrantyUntil),
 	}
 	for k, ov := range oldMap {
 		if nv := newMap[k]; nv != ov {
@@ -427,6 +433,22 @@ func deref(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+// idS *int64 → 字符串（nil → ""，diff 比较用）。
+func idS(v *int64) string {
+	if v == nil {
+		return ""
+	}
+	return strconv.FormatInt(*v, 10)
+}
+
+// dayStr *time.Time → YYYY-MM-DD（nil → ""，diff 比较用）。
+func dayStr(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.Format("2006-01-02")
 }
 
 func noteOf(changed map[string]any) *string {
