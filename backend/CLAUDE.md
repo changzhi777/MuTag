@@ -127,6 +127,8 @@ e2e 为**进程内**集成测试（net/http/httptest 起 router，绕沙箱端�
 4. **物理删 tags 会怎样？** 码号回池（nextTagID=MAX+1 实证）——纪律 1 禁止，一律置 void。
 5. **`/t` 分流渠道归类（V1.18）**：`scanChannel` 按 UA 嗅探——`MicroMessenger` → weapp（优先级最高）、`QingMuApp`（mobile APK WebView 后缀）→ app、其余 → h5；**新增渠道要动三处**：此纯函数 + TestScanChannel 断言 + **双方言 CHECK 约束迁移**（0005 先例——漏迁移则 Insert 静默失败，现已有日志留痕）。
 
+6. **手动 SQL 补数据的时间格式**：asset_events/各表 created_at 为 TEXT，系统写入格式 = RFC3339 带 **+00:00** 完整偏移（nowText()）；PG 的 now()::text 输出 **+00** 短偏移——timeFromText 解析失败会让 H5 履历列表**整体静默置空**（2026-11-24 补录挂载履历踩坑）。手动补数据用 `nowText()` 同格式（T 分隔 + :00 结尾），补完 curl H5 验履历非空。
+
 ## 相关文件清单
 
 - 入口：`cmd/server/main.go` · `cmd/migrate/main.go` · `Dockerfile`
