@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { App, Alert, Button, Card, Popconfirm, Space, Spin, Statistic, Table, Tag, Typography } from "antd";
 import { CheckCircleOutlined, ReloadOutlined } from "@ant-design/icons";
-import { DataGrid, type Column } from "react-data-grid";
+import { DataGrid, renderTextEditor, type Column } from "react-data-grid";
 import "react-data-grid/lib/styles.css";
 import { api, post } from "../api/client";
 import type { Asset, PreviewResult } from "../types";
@@ -127,6 +127,7 @@ export default function GridEdit() {
           name: c.name,
           width: c.width,
           editable: true,
+          renderEditCell: renderTextEditor, // rdg beta.64 必须显式给编辑器，仅 editable:true 无编辑器=不能编辑
           renderSummaryCell: undefined,
           cellClass: (row: GridRow) => {
             const orig = snapshot.find((s) => s._tag_id === row._tag_id);
