@@ -72,7 +72,10 @@ const FIELD_OPTIONS = [
   { value: "tag_id", label: "码号" },
   { value: "keeper", label: "保管人" },
   { value: "location", label: "位置" },
-  { value: "sn", label: "SN" }
+  { value: "sn", label: "SN" },
+  { value: "brand", label: "品牌" },
+  { value: "model", label: "规格型号" },
+  { value: "remark", label: "设备说明" }
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -196,7 +199,7 @@ export default function PrintPage() {
       holder.remove();
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = `${asset.tag_id}_${asset.name.slice(0, 20)}.${fmt}`;
+      a.download = `${asset.tag_id}.${fmt}`; // 纯编号命名（打印贴码回溯按码号检索）
       a.click();
       URL.revokeObjectURL(a.href);
       message.success(`已下载 ${fmt.toUpperCase()}：${asset.tag_id}`);
@@ -232,6 +235,9 @@ export default function PrintPage() {
           {fields.includes("keeper") && asset.keeper && <div className="mt-t-line">保管人：{asset.keeper}</div>}
           {fields.includes("location") && asset.location && <div className="mt-t-line">位置：{asset.location}</div>}
           {fields.includes("sn") && asset.sn && <div className="mt-t-line">SN：{asset.sn}</div>}
+          {fields.includes("brand") && asset.brand && <div className="mt-t-line">品牌：{asset.brand}</div>}
+          {fields.includes("model") && asset.model && <div className="mt-t-line">型号：{asset.model}</div>}
+          {fields.includes("remark") && asset.remark && <div className="mt-t-line">说明：{asset.remark}</div>}
         </div>
       </div>
     );
@@ -255,7 +261,7 @@ export default function PrintPage() {
         });
         qr.append(holder);
         const blob = (await qr.getRawData("png")) as Blob;
-        zip.file(`${a.tag_id}_${a.name.slice(0, 20)}.png`, blob);
+        zip.file(`${a.tag_id}.png`, blob); // 纯编号命名
         holder.innerHTML = "";
       }
       holder.remove();
