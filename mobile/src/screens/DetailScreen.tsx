@@ -7,7 +7,7 @@ import { BackHandler, StyleSheet, Pressable, Text, View } from "react-native";
 import { WebView } from "react-native-webview";
 import { useNavigation } from "@react-navigation/native";
 
-const AUTO_BACK_SECONDS = 5;
+const AUTO_BACK_SECONDS = 3;
 
 export default function DetailScreen({ route }: any) {
   const { url } = route.params as { url: string };
