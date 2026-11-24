@@ -89,7 +89,7 @@ func NewRouter(d Deps) *gin.Engine {
 	admin := r.Group("/api/admin")
 	{
 		admin.POST("/login", adminLogin(d.AdminPassword, d.Store))
-		authed := admin.Group("", adminAuth(d.AdminPassword))
+		authed := admin.Group("", adminAuth(d.AdminPassword, d.Store))
 		authed.GET("/assets", d.listAssets)
 		authed.POST("/assets", d.createAsset)
 		authed.PUT("/assets/:tagID", d.updateAsset)
@@ -116,6 +116,15 @@ func NewRouter(d Deps) *gin.Engine {
 			loc.POST("", d.createLocation)
 			loc.PUT("/:id", d.updateLocation)
 			loc.DELETE("/:id", d.deleteLocation)
+		}
+
+		// 0007 管理员管理
+		admins := authed.Group("/admins")
+		{
+			admins.GET("", d.listAdmins)
+			admins.POST("", d.createAdmin)
+			admins.PUT("/:id", d.updateAdmin)
+			admins.DELETE("/:id", d.deleteAdmin)
 		}
 
 		authed.GET("/stats", d.stats)

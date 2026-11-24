@@ -23,6 +23,10 @@ interface GridRow extends Record<string, string> {
   status: string;
   unit: string;
   remark: string;
+  brand: string;
+  keeper_phone: string;
+  warranty_until: string;
+  qty: string;
 }
 
 const toGridRow = (a: Asset): GridRow => ({
@@ -39,7 +43,11 @@ const toGridRow = (a: Asset): GridRow => ({
   location: a.location || "",
   status: a.status,
   unit: a.unit || "",
-  remark: a.remark || ""
+  remark: a.remark || "",
+  brand: a.brand || "",
+  keeper_phone: a.keeper_phone || "",
+  warranty_until: a.warranty_until || "",
+  qty: String(a.qty ?? 1)
 });
 
 // 可编辑列（tag_id 只读——纪律 1）
@@ -55,7 +63,11 @@ const EDITOR_COLS: { key: string; name: string; width?: number }[] = [
   { key: "location", name: "存放地点", width: 120 },
   { key: "status", name: "状态", width: 90 },
   { key: "unit", name: "单位", width: 70 },
-  { key: "remark", name: "备注", width: 160 }
+  { key: "remark", name: "备注", width: 160 },
+  { key: "brand", name: "品牌", width: 110 },
+  { key: "keeper_phone", name: "保管人电话", width: 130 },
+  { key: "warranty_until", name: "维保到期", width: 110 },
+  { key: "qty", name: "数量", width: 70 }
 ];
 
 const SYSTEM_STATUS = new Set(Object.keys(STATUS_TEXT));

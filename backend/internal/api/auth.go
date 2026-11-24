@@ -65,8 +65,9 @@ func verifyToken(key []byte, token string) (string, bool) {
 
 var errNoAuth = errors.New("auth disabled or invalid credentials")
 
-// adminAuth 鉴权中间件：未配置密码时放行（本地开发形态）；通过后 context 注入 actor 用户名。
-func adminAuth(password string) gin.HandlerFunc {
+// adminAuth 鉴权中间件：未配置密码时放行（本地开发形态）；通过后 context 注入
+// actor（管理员显示名，履历 Actor 用——单密码形态为 "admin"）与 actor_id（数字 id，删除保护用）。
+func adminAuth(password string, store *repo.Store) gin.HandlerFunc {
 	key := hmacKey(password)
 	return func(c *gin.Context) {
 		if key == nil {
@@ -79,10 +80,20 @@ func adminAuth(password string) gin.HandlerFunc {
 			c.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
 			return
 		}
-		if username == "" {
-			username = "admin" // 单密码形态的匿名管理员
+		actor, actorID := username, int64(0)
+		if username != "" && store != nil {
+			if admin, err := store.Admins().GetByUsername(c.Request.Context(), username); err == nil {
+				if admin.DisplayName != "" {
+					actor = admin.DisplayName
+				}
+				actorID = admin.ID
+			}
 		}
-		c.Set("actor", username)
+		if actor == "" {
+			actor = "admin" // 单密码形态的匿名管理员
+		}
+		c.Set("actor", actor)
+		c.Set("actor_id", actorID)
 		c.Next()
 	}
 }
@@ -113,9 +124,10 @@ func adminLogin(password string, store *repo.Store) gin.HandlerFunc {
 			}
 			name := admin.Username
 			if admin.DisplayName != "" {
-				name = admin.DisplayName // token 带显示名：入库 Actor 显示真实姓名（如"张晨"）
+				name = admin.DisplayName
 			}
-			c.JSON(200, gin.H{"token": issueToken(key, name, time.Now()), "display_name": name})
+			// token 塞 username（稳定身份标识，删除保护用）；显示名走响应字段与 adminAuth 反查
+			c.JSON(200, gin.H{"token": issueToken(key, admin.Username, time.Now()), "display_name": name})
 			return
 		}
 		// 单密码轨（兼容形态）

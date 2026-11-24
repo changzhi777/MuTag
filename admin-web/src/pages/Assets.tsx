@@ -69,10 +69,36 @@ export default function Assets() {
     void load();
   };
 
+  // 位置 id → "区域 → 点位"路径（locations 已在本组件加载）
+  const locPathOf = (id: number | null): string => {
+    if (id == null) return "";
+    const leaf = locations.find((l) => l.id === id);
+    if (!leaf) return "";
+    if (leaf.parent_id != null) {
+      const zone = locations.find((l) => l.id === leaf.parent_id);
+      return zone ? `${zone.name} → ${leaf.name}` : leaf.name;
+    }
+    return leaf.name;
+  };
+
   const columns: ColumnsType<Asset> = [
     { title: "码号", dataIndex: "tag_id", width: 150, render: (v: string) => <code>{v}</code> },
     { title: "名称", dataIndex: "name", ellipsis: true },
     { title: "保管人", dataIndex: "keeper", width: 100, render: (v) => v || "-" },
+    {
+      title: "安装位置", dataIndex: "location_id", width: 170, ellipsis: true,
+      render: (v: number | null, record) => locPathOf(v) || record.location || "-"
+    },
+    { title: "品牌", dataIndex: "brand", width: 110, render: (v) => v || "-" },
+    { title: "数量", dataIndex: "qty", width: 70, render: (v: number) => (v > 1 ? `×${v}` : "-") },
+    {
+      title: "所属设备", dataIndex: "parent_tag_id", width: 150, ellipsis: true,
+      render: (v: string | null) => {
+        if (!v) return "-";
+        const p = items.find((a) => a.tag_id === v);
+        return p ? `${p.name}` : <code>{v}</code>;
+      }
+    },
     { title: "采购日期", dataIndex: "buy_date", width: 110, render: fmtDate },
     { title: "单位", dataIndex: "unit", width: 70, render: (v) => v || "-" },
     {

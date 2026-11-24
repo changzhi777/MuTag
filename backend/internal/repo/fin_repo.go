@@ -51,10 +51,13 @@ type ImportItems struct {
 }
 
 // importableFields 导入可写字段白名单（tag_id 由系统分配，永不导入——纪律 1）。
+// 0006 增强：brand/keeper_phone/warranty_until/qty/location_id/parent_tag_id（lat/lng 为定位采集字段，不进导入）。
 var importableFields = map[string]bool{
 	"name": true, "category": true, "model": true, "sn": true,
 	"buy_date": true, "price": true, "dept_id": true, "keeper": true,
 	"location": true, "status": true, "unit": true, "warranty_end": true, "remark": true,
+	"brand": true, "keeper_phone": true, "warranty_until": true,
+	"qty": true, "location_id": true, "parent_tag_id": true,
 }
 
 // ---------------------------------------------------------------------------
@@ -539,15 +542,34 @@ func insertAssetFromFields(ctx context.Context, tx *sql.Tx, tagID string, fields
 	if status == "" {
 		status = string(domain.AssetInUse)
 	}
+	warrantyUntil, err := parseDayField(fields["warranty_until"])
+	if err != nil {
+		return 0, err
+	}
+	qty := 1
+	if q := strings.TrimSpace(fields["qty"]); q != "" {
+		if v, err := strconv.ParseInt(q, 10, 64); err == nil && v > 0 {
+			qty = int(v)
+		}
+	}
+	var locationID any
+	if v := strings.TrimSpace(fields["location_id"]); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil && n > 0 {
+			locationID = n
+		}
+	}
 	var assetID int64
 	err = tx.QueryRowContext(ctx, `INSERT INTO assets
-		(tag_id, name, category, model, sn, buy_date, price, dept_id, keeper, location, status, unit, warranty_end, remark, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		(tag_id, name, category, model, sn, buy_date, price, dept_id, keeper, location, status, unit, warranty_end, remark, created_at, updated_at,
+		 parent_tag_id, location_id, qty, brand, keeper_phone, warranty_until)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		RETURNING asset_id`,
 		tagID, name, nullIfEmpty(fields["category"]), nullIfEmpty(fields["model"]), nullIfEmpty(fields["sn"]),
 		dateArg(buyDate), price, nullIfEmpty(fields["dept_id"]), nullIfEmpty(fields["keeper"]),
 		nullIfEmpty(fields["location"]), domain.AssetStatus(status), nullIfEmpty(fields["unit"]),
-		dateArg(warrantyEnd), nullIfEmpty(fields["remark"]), nowText(), nowText()).Scan(&assetID)
+		dateArg(warrantyEnd), nullIfEmpty(fields["remark"]), nowText(), nowText(),
+		nullIfEmpty(fields["parent_tag_id"]), locationID, qty,
+		nullIfEmpty(fields["brand"]), nullIfEmpty(fields["keeper_phone"]), dateArg(warrantyUntil)).Scan(&assetID)
 	if err != nil {
 		return 0, err
 	}
@@ -571,12 +593,18 @@ func updateAssetFields(ctx context.Context, tx *sql.Tx, assetID int64, fields ma
 				return err
 			}
 			sets, args = append(sets, "price=?"), append(args, v)
-		case "buy_date", "warranty_end":
+		case "buy_date", "warranty_end", "warranty_until":
 			t, err := parseDayField(fields[f])
 			if err != nil {
 				return err
 			}
 			sets, args = append(sets, f+"=?"), append(args, dateArg(t))
+		case "qty", "location_id":
+			n, err := strconv.ParseInt(strings.TrimSpace(fields[f]), 10, 64)
+			if err != nil {
+				return fmt.Errorf("%s 应为整数: %w", f, err)
+			}
+			sets, args = append(sets, f+"=?"), append(args, n)
 		case "status":
 			sets, args = append(sets, "status=?"), append(args, domain.AssetStatus(fields[f]))
 		default:

@@ -1,6 +1,6 @@
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react-router";
 import { Layout, Menu } from "antd";
-import { ClearOutlined, HomeOutlined, LogoutOutlined, MoneyCollectOutlined, PrinterOutlined, QrcodeOutlined, StarOutlined, TableOutlined, UploadOutlined } from "@ant-design/icons";
+import { ClearOutlined, HomeOutlined, LogoutOutlined, MoneyCollectOutlined, PrinterOutlined, QrcodeOutlined, StarOutlined, TableOutlined, TeamOutlined, UploadOutlined } from "@ant-design/icons";
 import { useEffect } from "react";
 import { clearToken, getToken } from "./api/client";
 import Login from "./pages/Login";
@@ -12,6 +12,7 @@ import ImportPage from "./pages/ImportPage";
 import PrintPage from "./pages/PrintPage";
 import Stats from "./pages/Stats";
 import CleanupPage from "./pages/CleanupPage";
+import Admins from "./pages/Admins";
 
 const { Sider, Content, Header } = Layout;
 
@@ -39,7 +40,8 @@ function Shell() {
             { key: "grid", icon: <TableOutlined />, label: "表格编辑" },
             { key: "finance", icon: <MoneyCollectOutlined />, label: "财务对接" },
             { key: "cleanup", icon: <ClearOutlined />, label: "重复清理" },
-            { key: "stats", icon: <StarOutlined />, label: "统计" }
+            { key: "stats", icon: <StarOutlined />, label: "统计" },
+            { key: "admins", icon: <TeamOutlined />, label: "管理员" }
           ]}
         />
       </Sider>
@@ -85,6 +87,7 @@ export default function App() {
         <Route path="/finance" element={<Finance />} />
         <Route path="/stats" element={<Stats />} />
         <Route path="/cleanup" element={<CleanupPage />} />
+        <Route path="/admins" element={<Admins />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

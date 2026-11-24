@@ -327,9 +327,14 @@ rowLoop:
 							items.Errors = append(items.Errors, repo.ImportError{Row: rowNo, Reason: err.Error()})
 							continue rowLoop
 						}
-					case "buy_date", "warranty_end":
+					case "buy_date", "warranty_end", "warranty_until":
 						if _, err := repo.ParseDayField(s); err != nil {
 							items.Errors = append(items.Errors, repo.ImportError{Row: rowNo, Reason: err.Error()})
+							continue rowLoop
+						}
+					case "qty", "location_id":
+						if _, err := strconv.ParseInt(s, 10, 64); err != nil {
+							items.Errors = append(items.Errors, repo.ImportError{Row: rowNo, Reason: k + " 应为整数"})
 							continue rowLoop
 						}
 					}
@@ -445,6 +450,9 @@ func diffUpdate(rowNo int, a *domain.Asset, fields map[string]string) *repo.Impo
 		"sn": deref(a.Sn), "dept_id": deref(a.DeptID), "keeper": deref(a.Keeper),
 		"location": deref(a.Location), "unit": deref(a.Unit), "remark": deref(a.Remark),
 		"status": string(a.Status),
+		"brand":  deref(a.Brand), "keeper_phone": deref(a.KeeperPhone),
+		"parent_tag_id": deref(a.ParentTagID), "located_at": deref(a.LocatedAt),
+		"qty": strconv.Itoa(a.Qty),
 	}
 	if a.Price != nil {
 		current["price"] = fmt.Sprintf("%.2f", *a.Price)
@@ -454,6 +462,18 @@ func diffUpdate(rowNo int, a *domain.Asset, fields map[string]string) *repo.Impo
 	}
 	if a.WarrantyEnd != nil {
 		current["warranty_end"] = a.WarrantyEnd.Format("2006-01-02")
+	}
+	if a.WarrantyUntil != nil {
+		current["warranty_until"] = a.WarrantyUntil.Format("2006-01-02")
+	}
+	if a.LocationID != nil {
+		current["location_id"] = strconv.FormatInt(*a.LocationID, 10)
+	}
+	if a.Lat != nil {
+		current["lat"] = strconv.FormatFloat(*a.Lat, 'f', -1, 64)
+	}
+	if a.Lng != nil {
+		current["lng"] = strconv.FormatFloat(*a.Lng, 'f', -1, 64)
 	}
 
 	up := &repo.ImportUpdate{Row: rowNo, AssetID: a.AssetID, TagID: a.TagID,
