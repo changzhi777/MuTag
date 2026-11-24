@@ -68,13 +68,13 @@ export default function DetailScreen({ route }: any) {
         style={S.web}
         originWhitelist={["https://mutag.qingmulife.cn/*"]}
         onShouldStartLoadWithRequest={(req) => {
+          // 用户主动点击（click）= 取消自动返回（细看场景）；302 重定向（other）不取消——
+          // 活码 /t/{code} 自身 302 到 /h5/ 属程序行为，误取消会让自动返回从未开始
+          if (req.navigationType === "click") setAutoLeft(null);
           // 活码域内放行；外链（防伪签名/广告等）交系统浏览器
           return req.url.startsWith("https://mutag.qingmulife.cn/");
         }}
-        onNavigationStateChange={(s) => {
-          setWebCanGoBack(s.canGoBack);
-          if (s.url !== url) setAutoLeft(null); // 页内导航=用户主动浏览，取消自动返回
-        }}
+        onNavigationStateChange={(s) => setWebCanGoBack(s.canGoBack)}
         startInLoadingState
       />
     </View>
