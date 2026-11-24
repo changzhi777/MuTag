@@ -1,3 +1,7 @@
+## V1.0.6 (2026-11-24 08:16 CST)
+
+- 发版：见 git log 90a4678..HEAD 与 CLAUDE.md changelog
+
 ## V1.0.5 (2026-11-24 04:53 CST)
 
 - 发版：见 git log ff13dbe..HEAD 与 CLAUDE.md changelog
