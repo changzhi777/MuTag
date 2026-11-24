@@ -493,7 +493,7 @@ func diffUpdate(rowNo int, a *domain.Asset, fields map[string]string) *repo.Impo
 // confirmBatch POST /api/admin/fin/import/batches/:batchID/confirm —— 确认入库。
 func (d Deps) confirmBatch(c *gin.Context) {
 	created, updated, err := d.Store.ImportBatches().
-		ConfirmBatch(c.Request.Context(), c.Param("batchID"), "admin")
+		ConfirmBatch(c.Request.Context(), c.Param("batchID"), actorOf(c))
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -504,7 +504,7 @@ func (d Deps) confirmBatch(c *gin.Context) {
 // rollbackBatch POST /api/admin/fin/import/batches/:batchID/rollback —— 按批次回滚。
 func (d Deps) rollbackBatch(c *gin.Context) {
 	if err := d.Store.ImportBatches().
-		RollbackBatch(c.Request.Context(), c.Param("batchID"), "admin"); err != nil {
+		RollbackBatch(c.Request.Context(), c.Param("batchID"), actorOf(c)); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
