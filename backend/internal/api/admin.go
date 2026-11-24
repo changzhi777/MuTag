@@ -3,6 +3,7 @@
 package api
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -190,6 +191,7 @@ func (d Deps) updateAsset(c *gin.Context) {
 		"parent_tag_id": deref(old.ParentTagID), "location_id": idS(old.LocationID),
 		"qty": strconv.Itoa(old.Qty), "brand": deref(old.Brand),
 		"keeper_phone": deref(old.KeeperPhone), "warranty_until": dayStr(old.WarrantyUntil),
+		"buy_date": dayStr(old.BuyDate), "price": priceS(old.Price),
 	}
 	newMap := map[string]any{
 		"name": updated.Name, "keeper": deref(updated.Keeper), "location": deref(updated.Location),
@@ -198,6 +200,7 @@ func (d Deps) updateAsset(c *gin.Context) {
 		"parent_tag_id": deref(updated.ParentTagID), "location_id": idS(updated.LocationID),
 		"qty": strconv.Itoa(updated.Qty), "brand": deref(updated.Brand),
 		"keeper_phone": deref(updated.KeeperPhone), "warranty_until": dayStr(updated.WarrantyUntil),
+		"buy_date": dayStr(updated.BuyDate), "price": priceS(updated.Price),
 	}
 	for k, ov := range oldMap {
 		if nv := newMap[k]; nv != ov {
@@ -441,6 +444,14 @@ func idS(v *int64) string {
 		return ""
 	}
 	return strconv.FormatInt(*v, 10)
+}
+
+// priceS *float64 → 两位小数字符串（nil → ""，diff 比较用）。
+func priceS(p *float64) string {
+	if p == nil {
+		return ""
+	}
+	return fmt.Sprintf("%.2f", *p)
 }
 
 // dayStr *time.Time → YYYY-MM-DD（nil → ""，diff 比较用）。
